@@ -85,12 +85,6 @@ function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
   const groups = mesh.geometry.groups;
 
-  console.log(
-    "Materials:",
-    materials.map((m) => m.name),
-  );
-  console.log("Groups:", groups);
-
   // headマテリアルのインデックスを探す
   const headIndex = materials.findIndex((m) => m.name === "head");
   if (headIndex === -1) {
@@ -123,6 +117,17 @@ function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
     uv.needsUpdate = true;
   }
 
+  // 頂点法線のY成分で前面/後面フラグを設定（モデル空間でY軸が前後方向）
+  const normals = mesh.geometry.attributes.normal;
+  const faceFlag = new Float32Array(normals.count);
+  if (headGroup) {
+    for (let i = headGroup.start; i < headGroup.start + headGroup.count; i++) {
+      // Blender -Y forward: 法線Yが負なら顔の前面
+      faceFlag[i] = normals.getY(i) < 0 ? 1.0 : 0.0;
+    }
+  }
+  mesh.geometry.setAttribute("faceFlag", new THREE.BufferAttribute(faceFlag, 1));
+
   // 顔テクスチャを読み込んでheadマテリアルに適用
   const textureLoader = new THREE.TextureLoader();
   textureLoader.load(imageUrl, (texture) => {
@@ -130,6 +135,36 @@ function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
       map: texture,
       side: THREE.DoubleSide,
     });
+
+    headMat.onBeforeCompile = (shader) => {
+      shader.uniforms.hairColor = { value: new THREE.Color(0x2a1a0a) };
+
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <common>",
+        `#include <common>
+        attribute float faceFlag;
+        varying float vFaceFlag;`,
+      );
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+        vFaceFlag = faceFlag;`,
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <common>",
+        `#include <common>
+        uniform vec3 hairColor;
+        varying float vFaceFlag;`,
+      );
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <map_fragment>",
+        `#include <map_fragment>
+        if (vFaceFlag < 0.5) {
+          diffuseColor = vec4(hairColor, 1.0);
+        }`,
+      );
+    };
 
     const newMaterials = [...materials];
     newMaterials[headIndex] = headMat;
