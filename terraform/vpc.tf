@@ -140,7 +140,7 @@ resource "aws_route_table_association" "private" {
 # セキュリティグループ
 # ----------------------------------------------------------
 
-# ALB: インターネットから HTTP(80) のみ許可
+# ALB: インターネットから HTTP(80) / HTTPS(443) を許可
 resource "aws_security_group" "alb" {
   name   = "${var.app_name}-alb-sg"
   vpc_id = aws_vpc.main.id
@@ -149,6 +149,14 @@ resource "aws_security_group" "alb" {
     description = "HTTP from internet"
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS from internet"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

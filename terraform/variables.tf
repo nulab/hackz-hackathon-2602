@@ -33,3 +33,9 @@ variable "jwt_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "acm_certificate_arn" {
+  description = "ACM certificate ARN for ALB HTTPS listener (port 443). Leave empty to disable HTTPS on ALB."
+  type        = string
+  default     = ""
+}
