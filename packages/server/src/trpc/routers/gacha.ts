@@ -1,23 +1,29 @@
+import { TRPCError } from "@trpc/server";
 import { gachaResultSchema } from "@hackz/shared";
 import { protectedProcedure, router } from "../trpc";
 import { emitProjectorEvent } from "../ee";
 import { pullGacha } from "../../domain/gacha";
+import { createDynamoDBCostumeRepository } from "../../repositories/dynamodb/costume-repository";
+import { createDynamoDBUserCostumeRepository } from "../../repositories/dynamodb/user-costume-repository";
+
+const costumeRepo = createDynamoDBCostumeRepository();
+const userCostumeRepo = createDynamoDBUserCostumeRepository();
 
 export const gachaRouter = router({
   pull: protectedProcedure.output(gachaResultSchema).mutation(async ({ ctx }) => {
     const { rarity } = pullGacha();
 
-    // TODO: Fetch actual costume from DynamoDB based on rarity
-    const costume = {
-      id: `costume-${Date.now()}`,
-      name: `Costume (${rarity})`,
-      rarity,
-      category: "top" as const,
-      imageUrl: "https://placeholder.example.com/costume.jpg",
-      description: "A beautiful costume",
-    };
+    const costumes = await costumeRepo.findByRarity(rarity);
+    if (costumes.length === 0) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `No costumes available for rarity: ${rarity}`,
+      });
+    }
 
-    // Broadcast to projector subscribers
+    const costume = costumes[Math.floor(Math.random() * costumes.length)];
+    const { isNew } = await userCostumeRepo.acquire(ctx.userId, costume.id);
+
     emitProjectorEvent({
       type: "gacha:result",
       userId: ctx.userId,
@@ -27,6 +33,6 @@ export const gachaRouter = router({
       category: costume.category,
     });
 
-    return { costume, isNew: true };
+    return { costume, isNew };
   }),
 });
