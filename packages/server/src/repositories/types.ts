@@ -9,6 +9,7 @@ export type User = {
   id: string;
   nfcId: string;
   name: string;
+  token: string;
   photoUrl?: string;
   equippedBuildId?: string;
   totalScore: number;
