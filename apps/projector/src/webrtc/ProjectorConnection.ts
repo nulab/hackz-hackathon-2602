@@ -34,7 +34,7 @@ export class ProjectorConnection {
   /** PeerJS サーバーに接続し、peerId を返す */
   open(config: PeerServerConfig): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      const peer = new Peer(config);
+      const peer = new Peer(crypto.randomUUID(), config);
       this.peer = peer;
       this.setState("waiting");
 
