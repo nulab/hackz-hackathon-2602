@@ -1,9 +1,13 @@
 # ============================================================
 # VPC — ALB + ECS 用ネットワーク
 #
-# コスト優先のためパブリックサブネット構成（NAT Gateway なし）
-# ECS タスクは assign_public_ip = true で ECR からイメージ取得
-# セキュリティグループで ECS への直接アクセスを ALB のみに制限
+# サブネット構成:
+#   public[0]  10.0.1.0/24  AZ1  — ALB 用パブリック
+#   public[1]  10.0.3.0/24  AZ2  — ALB 用パブリック（ALB は 2 AZ 必須）
+#   private    10.0.2.0/24  AZ2  — ECS 用プライベート
+#
+# ECS はプライベートサブネットに配置。
+# NAT Gateway 経由で ECR / DynamoDB / S3 / Bedrock / Secrets Manager にアクセス。
 # ============================================================
 
 data "aws_availability_zones" "available" {
@@ -30,11 +34,15 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# パブリックサブネット × 2 AZ（ALB は 2 AZ 必須）
+# ----------------------------------------------------------
+# パブリックサブネット × 2 AZ（ALB 配置用）
+# index 0 → 10.0.1.0/24 (AZ1)
+# index 1 → 10.0.3.0/24 (AZ2)
+# ----------------------------------------------------------
 resource "aws_subnet" "public" {
   count             = 2
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.${count.index + 1}.0/24"
+  cidr_block        = count.index == 0 ? "10.0.1.0/24" : "10.0.3.0/24"
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
@@ -43,6 +51,24 @@ resource "aws_subnet" "public" {
   }
 }
 
+# ----------------------------------------------------------
+# プライベートサブネット（ECS 配置用）
+# 10.0.2.0/24 (AZ2) — NAT Gateway 経由でインターネットへ
+# ----------------------------------------------------------
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = data.aws_availability_zones.available.names[1]
+
+  tags = {
+    Name = "${var.app_name}-private-1"
+    App  = var.app_name
+  }
+}
+
+# ----------------------------------------------------------
+# パブリックルートテーブル（IGW 経由でインターネットへ）
+# ----------------------------------------------------------
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -61,6 +87,53 @@ resource "aws_route_table_association" "public" {
   count          = 2
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
+}
+
+# ----------------------------------------------------------
+# NAT Gateway（プライベートサブネットからのアウトバウンド用）
+# パブリックサブネット AZ1 に配置
+# ----------------------------------------------------------
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "${var.app_name}-nat-eip"
+    App  = var.app_name
+  }
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id
+
+  tags = {
+    Name = "${var.app_name}-nat"
+    App  = var.app_name
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+# ----------------------------------------------------------
+# プライベートルートテーブル（NAT Gateway 経由）
+# ----------------------------------------------------------
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
+  tags = {
+    Name = "${var.app_name}-private-rt"
+    App  = var.app_name
+  }
+}
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
 }
 
 # ----------------------------------------------------------
