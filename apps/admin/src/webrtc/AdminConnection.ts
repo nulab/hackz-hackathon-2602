@@ -73,7 +73,7 @@ export class AdminConnection {
     if (!this.peerConfig) {
       return;
     }
-    const peer = new Peer(this.peerConfig);
+    const peer = new Peer(crypto.randomUUID(), this.peerConfig);
     this.peer = peer;
 
     peer.on("open", () => {
