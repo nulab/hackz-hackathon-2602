@@ -1,0 +1,18 @@
+.itemGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-sm);
+  container-type: inline-size;
+}
+
+@container (min-width: 25rem) {
+  .itemGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@container (min-width: 37.5rem) {
+  .itemGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
