@@ -1,7 +1,7 @@
 import Peer from "peerjs";
 import type { DataConnection } from "peerjs";
 import { parseUpstreamMessage, serializeMessage } from "@hackz/shared";
-import type { UpstreamMessage, DownstreamMessage } from "@hackz/shared";
+import type { UpstreamMessage, DownstreamMessage, PeerServerConfig } from "@hackz/shared";
 
 export type ProjectorConnectionState = "waiting" | "connecting" | "connected" | "disconnected";
 
@@ -32,9 +32,9 @@ export class ProjectorConnection {
   }
 
   /** PeerJS サーバーに接続し、peerId を返す */
-  open(): Promise<string> {
+  open(config: PeerServerConfig): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      const peer = new Peer();
+      const peer = new Peer(config);
       this.peer = peer;
       this.setState("waiting");
 

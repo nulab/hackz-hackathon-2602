@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { serve } from "@hono/node-server";
+import { createAdaptorServer } from "@hono/node-server";
 import { trpcServer } from "@hono/trpc-server";
+import { ExpressPeerServer } from "peer";
 import { appRouter } from "./trpc/routers/_app";
 import { createContext } from "./trpc/context";
 import { corsMiddleware } from "./middleware/cors";
@@ -39,8 +40,14 @@ app.use(
 
 const port = Number(process.env.PORT) || 3000;
 
-serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`Server running at http://localhost:${info.port}`);
+// createAdaptorServer gives us the raw Node.js http.Server
+// so we can attach PeerJS WebSocket signaling on the same port
+const server = createAdaptorServer(app);
+
+ExpressPeerServer(server, { path: "/peerjs", allow_discovery: false });
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
 
 export { app, appRouter };

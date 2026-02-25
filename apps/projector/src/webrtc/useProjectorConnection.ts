@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getPeerServerConfig } from "@hackz/shared";
 import type { UpstreamMessage } from "@hackz/shared";
 import { ProjectorConnection } from "./ProjectorConnection";
 import type { ProjectorConnectionState } from "./ProjectorConnection";
+
+const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 export const useProjectorConnection = () => {
   const connectionRef = useRef<ProjectorConnection | null>(null);
@@ -11,14 +14,16 @@ export const useProjectorConnection = () => {
     null,
   );
 
+  const peerConfig = useMemo(() => getPeerServerConfig(API_URL), []);
+
   const open = useCallback(async () => {
     const conn = new ProjectorConnection();
     connectionRef.current = conn;
     conn.onStateChange(setState);
 
-    const peerId = await conn.open();
+    const peerId = await conn.open(peerConfig);
     setRoomId(peerId);
-  }, []);
+  }, [peerConfig]);
 
   const disconnectAdmin = useCallback(() => {
     connectionRef.current?.disconnectAdmin();

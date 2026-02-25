@@ -1,7 +1,7 @@
 import Peer from "peerjs";
 import type { DataConnection } from "peerjs";
 import { parseDownstreamMessage, serializeMessage } from "@hackz/shared";
-import type { DownstreamMessage, UpstreamMessage } from "@hackz/shared";
+import type { DownstreamMessage, UpstreamMessage, PeerServerConfig } from "@hackz/shared";
 
 export type AdminConnectionState = "disconnected" | "connecting" | "connected" | "reconnecting";
 
@@ -18,6 +18,7 @@ export class AdminConnection {
   private messageHandlers = new Set<MessageHandler>();
   private stateHandlers = new Set<StateHandler>();
   private targetPeerId: string | null = null;
+  private peerConfig: PeerServerConfig | null = null;
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private intentionalDisconnect = false;
@@ -34,8 +35,9 @@ export class AdminConnection {
   }
 
   /** Projector の peerId に接続する */
-  connect(projectorPeerId: string) {
+  connect(projectorPeerId: string, config: PeerServerConfig) {
     this.targetPeerId = projectorPeerId;
+    this.peerConfig = config;
     this.intentionalDisconnect = false;
     this.reconnectAttempt = 0;
     this.doConnect();
@@ -68,7 +70,10 @@ export class AdminConnection {
     this.cleanup();
     this.setState("connecting");
 
-    const peer = new Peer();
+    if (!this.peerConfig) {
+      return;
+    }
+    const peer = new Peer(this.peerConfig);
     this.peer = peer;
 
     peer.on("open", () => {

@@ -8,5 +8,8 @@ export default defineConfig({
   plugins: [TanStackRouterVite(), react(), tailwindcss()],
   server: {
     port: 5175,
+    proxy: {
+      "/peerjs": { target: "http://localhost:3000", ws: true },
+    },
   },
 });
