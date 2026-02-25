@@ -8,11 +8,9 @@ const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 export const useProjectorConnection = () => {
   const connectionRef = useRef<ProjectorConnection | null>(null);
+  const messageHandlerRef = useRef<((msg: UpstreamMessage) => void) | null>(null);
   const [state, setState] = useState<ProjectorConnectionState>("disconnected");
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [messageHandler, setMessageHandler] = useState<((msg: UpstreamMessage) => void) | null>(
-    null,
-  );
 
   const peerConfig = useMemo(() => getPeerServerConfig(API_URL), []);
 
@@ -20,6 +18,10 @@ export const useProjectorConnection = () => {
     const conn = new ProjectorConnection();
     connectionRef.current = conn;
     conn.onStateChange(setState);
+
+    if (messageHandlerRef.current) {
+      conn.onMessage(messageHandlerRef.current);
+    }
 
     const peerId = await conn.open(peerConfig);
     setRoomId(peerId);
@@ -36,16 +38,11 @@ export const useProjectorConnection = () => {
   }, []);
 
   const onMessage = useCallback((handler: (msg: UpstreamMessage) => void) => {
-    setMessageHandler(() => handler);
-  }, []);
-
-  // メッセージハンドラの登録
-  useEffect(() => {
-    if (!connectionRef.current || !messageHandler) {
-      return;
+    messageHandlerRef.current = handler;
+    if (connectionRef.current) {
+      connectionRef.current.onMessage(handler);
     }
-    return connectionRef.current.onMessage(messageHandler);
-  }, [messageHandler, state]);
+  }, []);
 
   // クリーンアップ
   useEffect(

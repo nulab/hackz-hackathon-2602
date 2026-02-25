@@ -50,7 +50,9 @@ const PairPage = () => {
 
   // ルーム作成
   useEffect(() => {
-    openRef.current();
+    openRef.current().catch(() => {
+      // PeerJS server unreachable — state stays "disconnected"
+    });
     return () => {
       closeRef.current();
     };

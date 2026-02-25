@@ -8,10 +8,8 @@ const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 export const useAdminConnection = () => {
   const connectionRef = useRef<AdminConnection | null>(null);
+  const messageHandlerRef = useRef<((msg: DownstreamMessage) => void) | null>(null);
   const [state, setState] = useState<AdminConnectionState>("disconnected");
-  const [messageHandler, setMessageHandler] = useState<((msg: DownstreamMessage) => void) | null>(
-    null,
-  );
 
   const peerConfig = useMemo(() => getPeerServerConfig(API_URL), []);
 
@@ -20,6 +18,11 @@ export const useAdminConnection = () => {
       const conn = new AdminConnection();
       connectionRef.current = conn;
       conn.onStateChange(setState);
+
+      if (messageHandlerRef.current) {
+        conn.onMessage(messageHandlerRef.current);
+      }
+
       conn.connect(projectorPeerId, peerConfig);
     },
     [peerConfig],
@@ -39,16 +42,11 @@ export const useAdminConnection = () => {
   }, []);
 
   const onMessage = useCallback((handler: (msg: DownstreamMessage) => void) => {
-    setMessageHandler(() => handler);
-  }, []);
-
-  // メッセージハンドラの登録
-  useEffect(() => {
-    if (!connectionRef.current || !messageHandler) {
-      return;
+    messageHandlerRef.current = handler;
+    if (connectionRef.current) {
+      connectionRef.current.onMessage(handler);
     }
-    return connectionRef.current.onMessage(messageHandler);
-  }, [messageHandler, state]);
+  }, []);
 
   // クリーンアップ
   useEffect(
