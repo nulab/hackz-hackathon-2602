@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import type { DownstreamMessage } from "@hackz/shared";
-import { useAdminConnection } from "../webrtc/useAdminConnection";
-import type { AdminConnectionState } from "../webrtc/AdminConnection";
+import { useAdminRoomConnection } from "../hooks/useAdminRoomConnection";
+import type { AdminConnectionState } from "../hooks/useAdminRoomConnection";
+import { useRoomPolling } from "../hooks/useRoomPolling";
 import { useNfcReader } from "../hooks/useNfcReader";
 import { useQrScanner } from "../hooks/useQrScanner";
 
@@ -14,8 +14,6 @@ const getStatusColor = (state: AdminConnectionState): string => {
       return "bg-green-500";
     case "connecting":
       return "bg-yellow-500 animate-pulse";
-    case "reconnecting":
-      return "bg-orange-500 animate-pulse";
     default:
       return "bg-red-500";
   }
@@ -27,8 +25,6 @@ const getStatusText = (state: AdminConnectionState): string => {
       return "接続済み";
     case "connecting":
       return "接続中...";
-    case "reconnecting":
-      return "再接続中...";
     default:
       return "未接続";
   }
@@ -36,7 +32,7 @@ const getStatusText = (state: AdminConnectionState): string => {
 
 const ConnectPage = () => {
   const { roomId: routeRoomId } = Route.useParams();
-  const { state, connect, disconnect, sendNfcScan, sendQrScan, onMessage } = useAdminConnection();
+  const { state, roomId, connect, disconnect, sendNfcScan, sendQrScan } = useAdminRoomConnection();
   const {
     isSupported: nfcSupported,
     isReading,
@@ -71,23 +67,33 @@ const ConnectPage = () => {
     }
   }, [lastRead, sendNfcScan]);
 
-  // Projector からのメッセージ
-  const handleMessage = useCallback((msg: DownstreamMessage) => {
-    if (msg.type === "SCAN_RESULT") {
-      setFeedback({
-        success: msg.success,
-        message: msg.message ?? (msg.success ? "成功" : "失敗"),
-      });
-      setTimeout(() => setFeedback(null), 3000);
-    }
-    if (msg.type === "DISCONNECT") {
-      setFeedback({ success: false, message: `切断: ${msg.reason}` });
-    }
-  }, []);
+  // Projector からのダウンストリームメッセージをポーリング
+  const handleDownstreamMessages = useCallback(
+    (messages: { id: number; type: string; payload: unknown; createdAt: number }[]) => {
+      for (const msg of messages) {
+        if (msg.type === "SCAN_RESULT") {
+          const payload = msg.payload as { success: boolean; message?: string };
+          setFeedback({
+            success: payload.success,
+            message: payload.message ?? (payload.success ? "成功" : "失敗"),
+          });
+          setTimeout(() => setFeedback(null), 3000);
+        }
+        if (msg.type === "DISCONNECT") {
+          const payload = msg.payload as { reason: string };
+          setFeedback({ success: false, message: `切断: ${payload.reason}` });
+        }
+      }
+    },
+    [],
+  );
 
-  useEffect(() => {
-    onMessage(handleMessage);
-  }, [onMessage, handleMessage]);
+  useRoomPolling(
+    state === "connected" ? roomId : null,
+    "downstream",
+    1000,
+    handleDownstreamMessages,
+  );
 
   // QR スキャン結果を送信
   const handleQrScan = useCallback(
@@ -129,7 +135,7 @@ const ConnectPage = () => {
       )}
 
       {/* 接続中 */}
-      {(state === "connecting" || state === "reconnecting") && (
+      {state === "connecting" && (
         <div className="flex flex-col items-center justify-center flex-1 gap-4">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-gray-600">Projector に接続中...</p>

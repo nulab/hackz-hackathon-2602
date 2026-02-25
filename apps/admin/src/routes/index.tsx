@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Html5Qrcode } from "html5-qrcode";
-import type { DownstreamMessage } from "@hackz/shared";
-import { useAdminConnection } from "../webrtc/useAdminConnection";
-import type { AdminConnectionState } from "../webrtc/AdminConnection";
-
-type ScanFeedback = { success: boolean; message: string } | null;
+import { useAdminRoomConnection } from "../hooks/useAdminRoomConnection";
+import type { AdminConnectionState } from "../hooks/useAdminRoomConnection";
 
 const getStatusColor = (state: AdminConnectionState): string => {
   switch (state) {
@@ -13,8 +10,6 @@ const getStatusColor = (state: AdminConnectionState): string => {
       return "bg-green-500";
     case "connecting":
       return "bg-yellow-500 animate-pulse";
-    case "reconnecting":
-      return "bg-orange-500 animate-pulse";
     default:
       return "bg-red-500";
   }
@@ -26,36 +21,15 @@ const getStatusText = (state: AdminConnectionState): string => {
       return "接続済み";
     case "connecting":
       return "接続中...";
-    case "reconnecting":
-      return "再接続中...";
     default:
       return "未接続";
   }
 };
 
 const AdminPage = () => {
-  const { state, connect, disconnect, sendNfcScan, onMessage } = useAdminConnection();
-  const [feedback, setFeedback] = useState<ScanFeedback>(null);
+  const { state, connect, disconnect, sendNfcScan } = useAdminRoomConnection();
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-
-  // スキャン結果のフィードバック処理
-  const handleMessage = useCallback((msg: DownstreamMessage) => {
-    if (msg.type === "SCAN_RESULT") {
-      setFeedback({
-        success: msg.success,
-        message: msg.message ?? (msg.success ? "成功" : "失敗"),
-      });
-      setTimeout(() => setFeedback(null), 3000);
-    }
-    if (msg.type === "DISCONNECT") {
-      setFeedback({ success: false, message: `切断: ${msg.reason}` });
-    }
-  }, []);
-
-  useEffect(() => {
-    onMessage(handleMessage);
-  }, [onMessage, handleMessage]);
 
   // QR コードスキャン開始
   const startQrScan = useCallback(async () => {
@@ -73,8 +47,11 @@ const AdminPage = () => {
         await scanner.stop();
         scannerRef.current = null;
         setScanning(false);
-        // QR の中身が roomId → Projector に接続
-        await connect(decodedText);
+        // Extract roomId from URL (last path segment)
+        const roomId = decodedText.split("/").pop();
+        if (roomId) {
+          await connect(roomId);
+        }
       },
       () => {}, // scan failure (continuous, not an error)
     );
@@ -104,17 +81,6 @@ const AdminPage = () => {
         <span className="text-sm text-gray-600">{getStatusText(state)}</span>
       </div>
 
-      {/* フィードバック */}
-      {feedback && (
-        <div
-          className={`fixed top-16 inset-x-4 p-4 rounded-lg text-center text-white font-bold text-lg ${
-            feedback.success ? "bg-green-500" : "bg-red-500"
-          }`}
-        >
-          {feedback.message}
-        </div>
-      )}
-
       {/* 未接続: QR スキャン画面 */}
       {state === "disconnected" && (
         <div className="flex flex-col items-center gap-6">
@@ -134,12 +100,10 @@ const AdminPage = () => {
       )}
 
       {/* 接続中 */}
-      {(state === "connecting" || state === "reconnecting") && (
+      {state === "connecting" && (
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600">
-            {state === "connecting" ? "Projector に接続中..." : "再接続中..."}
-          </p>
+          <p className="text-gray-600">Projector に接続中...</p>
         </div>
       )}
 
