@@ -1,3 +1,26 @@
+# Conditional ECR Push Implementation Plan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** ECR push をイメージ内容が変わったときだけ実行し、無駄なデプロイを省く
+
+**Architecture:** Docker build は毎回実行（ビルド健全性チェック）。`docker/build-push-action` の `imageid` 出力を GHA cache に保存した前回値と比較し、変更時のみ push + ECS デプロイを実行する
+
+**Tech Stack:** GitHub Actions, docker/build-push-action@v6, actions/cache/restore + save, AWS ECR/ECS
+
+---
+
+### Task 1: ecr-push.yml を条件付き push に書き換え
+
+**Files:**
+
+- Modify: `.github/workflows/ecr-push.yml`
+
+**Step 1: ワークフロー全体を書き換え**
+
+現在の `ecr-push.yml` を以下の内容に置き換える:
+
+```yaml
 name: ECR Push
 
 on:
@@ -24,9 +47,6 @@ jobs:
 
       - name: Build Docker image (without push)
         id: build
-        # imageid is a content-addressable hash of the image config.
-        # Used to detect changes; relies on BuildKit producing deterministic
-        # image IDs for identical inputs.
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -41,16 +61,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /tmp/docker-imageid
-          # Exact key intentionally won't match; restore-keys prefix match
-          # fetches the most recent saved entry
           key: docker-imageid-
           restore-keys: docker-imageid-
 
       - name: Check if image changed
         id: check
-        env:
-          CURRENT_ID: ${{ steps.build.outputs.imageid }}
         run: |
+          CURRENT_ID="${{ steps.build.outputs.imageid }}"
           echo "Current image ID: $CURRENT_ID"
 
           if [ -f /tmp/docker-imageid ]; then
@@ -59,19 +76,13 @@ jobs:
             if [ "$CURRENT_ID" = "$PREVIOUS_ID" ]; then
               echo "Image unchanged, skipping push"
               echo "changed=false" >> "$GITHUB_OUTPUT"
-              echo "### ⏭️ ECR push skipped" >> "$GITHUB_STEP_SUMMARY"
-              echo "Image ID unchanged: \`$CURRENT_ID\`" >> "$GITHUB_STEP_SUMMARY"
             else
               echo "Image changed, will push"
               echo "changed=true" >> "$GITHUB_OUTPUT"
-              echo "### 🚀 ECR push required" >> "$GITHUB_STEP_SUMMARY"
-              echo "Image ID changed" >> "$GITHUB_STEP_SUMMARY"
             fi
           else
             echo "No previous image ID found (cache miss), will push"
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "### 🚀 ECR push required" >> "$GITHUB_STEP_SUMMARY"
-            echo "Image ID changed" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Configure AWS credentials
@@ -88,33 +99,26 @@ jobs:
 
       - name: Tag and push Docker image
         if: steps.check.outputs.changed == 'true'
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPO: ${{ vars.ECR_REPOSITORY }}
-          SHA: ${{ github.sha }}
         run: |
-          docker tag hackz-server:local "$REGISTRY/$REPO:$SHA"
+          REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+          REPO="${{ vars.ECR_REPOSITORY }}"
+          docker tag hackz-server:local "$REGISTRY/$REPO:${{ github.sha }}"
           docker tag hackz-server:local "$REGISTRY/$REPO:latest"
-          docker push "$REGISTRY/$REPO:$SHA"
+          docker push "$REGISTRY/$REPO:${{ github.sha }}"
           docker push "$REGISTRY/$REPO:latest"
 
       - name: Deploy to ECS
         if: steps.check.outputs.changed == 'true'
-        env:
-          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
-          ECS_SERVICE: ${{ vars.ECS_SERVICE }}
         run: |
           aws ecs update-service \
-            --cluster "$ECS_CLUSTER" \
-            --service "$ECS_SERVICE" \
+            --cluster ${{ vars.ECS_CLUSTER }} \
+            --service ${{ vars.ECS_SERVICE }} \
             --force-new-deployment
 
       - name: Write current image ID for cache
         if: steps.check.outputs.changed == 'true'
-        env:
-          IMAGE_ID: ${{ steps.build.outputs.imageid }}
         run: |
-          echo "$IMAGE_ID" > /tmp/docker-imageid
+          echo "${{ steps.build.outputs.imageid }}" > /tmp/docker-imageid
 
       - name: Save image ID to cache
         if: steps.check.outputs.changed == 'true'
@@ -122,3 +126,25 @@ jobs:
         with:
           path: /tmp/docker-imageid
           key: docker-imageid-${{ github.run_id }}
+```
+
+**Step 2: 書き換えた内容を目視確認**
+
+以下のポイントを確認:
+
+- `push: false` + `load: true` で buildx がローカルにイメージをロードすること
+- `cache-from: type=gha` / `cache-to: type=gha,mode=max` が残っていること（ビルドキャッシュ）
+- `if: steps.check.outputs.changed == 'true'` が push/deploy/cache save すべてに付いていること
+- `actions/cache/restore@v4` の `restore-keys` が prefix マッチであること
+- `actions/cache/save@v4` の `key` に `github.run_id` が含まれること
+
+**Step 3: Commit**
+
+```bash
+git add .github/workflows/ecr-push.yml
+git commit -m "feat: skip ECR push when Docker image unchanged
+
+Compare image ID (content-addressable hash) with previous build
+stored in GHA cache. Push and deploy only when image changes.
+Build always runs to verify build health."
+```
