@@ -11,7 +11,7 @@ export function DancingModel() {
     const loader = new FBXLoader();
 
     loader.load(
-      "/models/womam_with_born_and_separeted_head_body.fbx",
+      "/models/model_sep_HeadTopsBottomsShoes.fbx",
       (fbx) => {
         fbx.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
@@ -34,8 +34,11 @@ export function DancingModel() {
         const adjustedBox = new THREE.Box3().setFromObject(fbx);
         fbx.position.y = -adjustedBox.min.y;
 
-        // 顔テクスチャを頭メッシュに直接マッピング
-        attachFaceTextureToMesh(fbx, "/models/free_face.png");
+        // テクスチャ適用（全パーツ共通のUVリマップ＋テクスチャ貼り付け）
+        attachTextureToGroup(fbx, "head", "/models/free_face.png", "#2a1a0a");
+        attachTextureToGroup(fbx, "tops", "/models/sozai_tops.png", "#e8a0b8");
+        attachBottomsTexture(fbx, "/models/sozai_bottoms_vivid.png");
+        // attachTextureToGroup(fbx, "shoes", "/models/sozai_shoes.png");
 
         // ダンスアニメーション
         mixer.current = new THREE.AnimationMixer(fbx);
@@ -69,7 +72,12 @@ export function DancingModel() {
   return <primitive object={scene} />;
 }
 
-function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
+function attachTextureToGroup(
+  model: THREE.Object3D,
+  materialName: string,
+  imageUrl: string,
+  baseColor = "#ffffff",
+) {
   let targetMesh: THREE.SkinnedMesh | null = null;
   model.traverse((child) => {
     if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
@@ -85,90 +93,351 @@ function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
   const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
   const groups = mesh.geometry.groups;
 
-  // headマテリアルのインデックスを探す
-  const headIndex = materials.findIndex((m) => m.name === "head");
-  if (headIndex === -1) {
+  // 全グループ構造をダンプ（初回のみ）
+  if (materialName === "head") {
+    console.log("=== ALL GROUPS ===");
+    groups.forEach((g, i) => {
+      const matName = materials[g.materialIndex!]?.name ?? "???";
+      console.log(
+        `  group[${i}]: start=${g.start}, count=${g.count}, matIndex=${g.materialIndex} (${matName})`,
+      );
+    });
+    console.log(`  total vertex count: ${mesh.geometry.attributes.position.count}`);
+    console.log(
+      `  materials:`,
+      materials.map((m, i) => `${i}:${m.name}`),
+    );
+  }
+
+  const matIndex = materials.findIndex((m) => m.name === materialName);
+  if (matIndex === -1) {
     console.warn(
-      "head material not found, available:",
+      `[${materialName}] material not found, available:`,
       materials.map((m) => m.name),
     );
     return;
   }
 
-  // 頭部UVを0〜1にリマップ（元のUVは全身用で頭部が極小範囲に収まっている）
+  // 同じmatIndexのグループが複数あるかチェック
+  const matchingGroups = groups.filter((g) => g.materialIndex === matIndex);
+  console.log(
+    `[${materialName}] matching groups: ${matchingGroups.length}`,
+    matchingGroups.map((g) => `start=${g.start},count=${g.count}`),
+  );
+
+  if (matchingGroups.length === 0) {
+    console.warn(`[${materialName}] no groups found for matIndex=${matIndex}`);
+    return;
+  }
+
   const uv = mesh.geometry.attributes.uv;
-  const headGroup = groups.find((g) => g.materialIndex === headIndex);
-  if (headGroup && uv) {
-    let minU = Infinity,
-      maxU = -Infinity,
-      minV = Infinity,
-      maxV = -Infinity;
-    for (let i = headGroup.start; i < headGroup.start + headGroup.count; i++) {
-      minU = Math.min(minU, uv.getX(i));
-      maxU = Math.max(maxU, uv.getX(i));
-      minV = Math.min(minV, uv.getY(i));
-      maxV = Math.max(maxV, uv.getY(i));
-    }
-    const rangeU = maxU - minU || 1;
-    const rangeV = maxV - minV || 1;
-    for (let i = headGroup.start; i < headGroup.start + headGroup.count; i++) {
-      uv.setXY(i, (uv.getX(i) - minU) / rangeU, (uv.getY(i) - minV) / rangeV);
-    }
-    uv.needsUpdate = true;
-  }
+  const pos = mesh.geometry.attributes.position;
+  const index = mesh.geometry.index;
+  const totalVerts = matchingGroups.reduce((sum, g) => sum + g.count, 0);
 
-  // 頂点法線のY成分で前面/後面フラグを設定（モデル空間でY軸が前後方向）
-  const normals = mesh.geometry.attributes.normal;
-  const faceFlag = new Float32Array(normals.count);
-  if (headGroup) {
-    for (let i = headGroup.start; i < headGroup.start + headGroup.count; i++) {
-      // Blender -Y forward: 法線Yが負なら顔の前面
-      faceFlag[i] = normals.getY(i) < 0 ? 1.0 : 0.0;
+  if (materialName === "head") {
+    // headは従来のUVリマップ（最初のグループのみ、顔写真にフィット）
+    for (const g of matchingGroups) {
+      let minU = Infinity,
+        maxU = -Infinity,
+        minV = Infinity,
+        maxV = -Infinity;
+      for (let i = g.start; i < g.start + g.count; i++) {
+        const vi = index ? index.getX(i) : i;
+        minU = Math.min(minU, uv.getX(vi));
+        maxU = Math.max(maxU, uv.getX(vi));
+        minV = Math.min(minV, uv.getY(vi));
+        maxV = Math.max(maxV, uv.getY(vi));
+      }
+      const rangeU = maxU - minU || 1;
+      const rangeV = maxV - minV || 1;
+      for (let i = g.start; i < g.start + g.count; i++) {
+        const vi = index ? index.getX(i) : i;
+        uv.setXY(vi, (uv.getX(vi) - minU) / rangeU, (uv.getY(vi) - minV) / rangeV);
+      }
+    }
+
+    // 前面/後面フラグ
+    const normals = mesh.geometry.attributes.normal;
+    const faceFlag = new Float32Array(normals.count);
+    for (const g of matchingGroups) {
+      for (let i = g.start; i < g.start + g.count; i++) {
+        const vi = index ? index.getX(i) : i;
+        faceFlag[vi] = normals.getY(vi) < 0 ? 1.0 : 0.0;
+      }
+    }
+    mesh.geometry.setAttribute("faceFlag", new THREE.BufferAttribute(faceFlag, 1));
+  } else {
+    // head以外: 頂点座標からUVを生成（正面プロジェクション）
+    // モデル空間: X=左右, Y=前後, Z=上下（Blender Z-up）
+    let minX = Infinity,
+      maxX = -Infinity,
+      minZ = Infinity,
+      maxZ = -Infinity;
+    for (const g of matchingGroups) {
+      for (let i = g.start; i < g.start + g.count; i++) {
+        const vi = index ? index.getX(i) : i;
+        minX = Math.min(minX, pos.getX(vi));
+        maxX = Math.max(maxX, pos.getX(vi));
+        minZ = Math.min(minZ, pos.getZ(vi));
+        maxZ = Math.max(maxZ, pos.getZ(vi));
+      }
+    }
+    console.log(
+      `[${materialName}] position range: X[${minX.toFixed(3)}, ${maxX.toFixed(3)}] Z[${minZ.toFixed(3)}, ${maxZ.toFixed(3)}]`,
+    );
+
+    const rangeX = maxX - minX || 1;
+    const rangeZ = maxZ - minZ || 1;
+    for (const g of matchingGroups) {
+      for (let i = g.start; i < g.start + g.count; i++) {
+        const vi = index ? index.getX(i) : i;
+        const u = (pos.getX(vi) - minX) / rangeX;
+        const v = (pos.getZ(vi) - minZ) / rangeZ;
+        uv.setXY(vi, u, v);
+      }
     }
   }
-  mesh.geometry.setAttribute("faceFlag", new THREE.BufferAttribute(faceFlag, 1));
+  uv.needsUpdate = true;
+  console.log(
+    `[${materialName}] ${materialName === "head" ? "UV remapped" : "position projected"}: ${matchingGroups.length} groups, ${totalVerts} verts`,
+  );
 
-  // 顔テクスチャを読み込んでheadマテリアルに適用
+  // テクスチャ読み込み → 衣服部分を切り出し → タイルテクスチャ作成
   const textureLoader = new THREE.TextureLoader();
   textureLoader.load(imageUrl, (texture) => {
-    const headMat = new THREE.MeshBasicMaterial({
-      map: texture,
+    const img = texture.image as HTMLImageElement;
+    console.log(`[${materialName}] texture loaded: ${img.width}x${img.height}`);
+
+    // 1. 画像をCanvasに描画してピクセルデータ取得
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width = img.width;
+    tmpCanvas.height = img.height;
+    const tmpCtx = tmpCanvas.getContext("2d")!;
+    tmpCtx.drawImage(img, 0, 0);
+    const imageData = tmpCtx.getImageData(0, 0, img.width, img.height);
+    const pixels = imageData.data;
+
+    // 2. 不透過ピクセルのバウンディングボックスを検出
+    let minX = img.width,
+      maxX = 0,
+      minY = img.height,
+      maxY = 0;
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        const alpha = pixels[(y * img.width + x) * 4 + 3];
+        if (alpha > 10) {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+    const cropW = maxX - minX + 1;
+    const cropH = maxY - minY + 1;
+    console.log(
+      `[${materialName}] content bounds: (${minX},${minY})-(${maxX},${maxY}) = ${cropW}x${cropH}`,
+    );
+
+    // 3. 切り出した衣服部分でテクスチャ作成（彩度・コントラスト強調）
+    const canvas = document.createElement("canvas");
+    canvas.width = cropW;
+    canvas.height = cropH;
+    const ctx = canvas.getContext("2d")!;
+    if (materialName === "head") {
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(0, 0, cropW, cropH);
+    } else {
+      // 白背景で透明部分を埋める（画像はそのまま加工なし）
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, cropW, cropH);
+    }
+    ctx.drawImage(img, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+
+    const canvasTex = new THREE.CanvasTexture(canvas);
+
+    const mat = new THREE.MeshBasicMaterial({
+      map: canvasTex,
       side: THREE.DoubleSide,
     });
 
-    headMat.onBeforeCompile = (shader) => {
-      shader.uniforms.hairColor = { value: new THREE.Color(0x2a1a0a) };
+    // headの場合: 前面=テクスチャ、後面=髪色のシェーダー
+    if (materialName === "head") {
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.hairColor = { value: new THREE.Color(0x2a1a0a) };
+        shader.vertexShader = shader.vertexShader.replace(
+          "#include <common>",
+          `#include <common>
+          attribute float faceFlag;
+          varying float vFaceFlag;`,
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+          vFaceFlag = faceFlag;`,
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <common>",
+          `#include <common>
+          uniform vec3 hairColor;
+          varying float vFaceFlag;`,
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <map_fragment>",
+          `#include <map_fragment>
+          if (vFaceFlag < 0.5) {
+            diffuseColor = vec4(hairColor, 1.0);
+          }`,
+        );
+      };
+    }
 
-      shader.vertexShader = shader.vertexShader.replace(
-        "#include <common>",
-        `#include <common>
-        attribute float faceFlag;
-        varying float vFaceFlag;`,
-      );
-      shader.vertexShader = shader.vertexShader.replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
-        vFaceFlag = faceFlag;`,
-      );
+    // callback時点の最新material配列をコピーして更新
+    const currentMaterials = Array.isArray(mesh.material) ? [...mesh.material] : [mesh.material];
+    currentMaterials[matIndex] = mat;
+    mesh.material = currentMaterials;
 
-      shader.fragmentShader = shader.fragmentShader.replace(
-        "#include <common>",
-        `#include <common>
-        uniform vec3 hairColor;
-        varying float vFaceFlag;`,
-      );
-      shader.fragmentShader = shader.fragmentShader.replace(
-        "#include <map_fragment>",
-        `#include <map_fragment>
-        if (vFaceFlag < 0.5) {
-          diffuseColor = vec4(hairColor, 1.0);
-        }`,
-      );
-    };
+    console.log(
+      `[${materialName}] material set at index ${matIndex}, total: ${currentMaterials.length}`,
+    );
+    console.log(
+      `[${materialName}] all materials:`,
+      currentMaterials.map((m, i) => `${i}:${m.type}`),
+    );
+  });
+}
 
-    const newMaterials = [...materials];
-    newMaterials[headIndex] = headMat;
-    mesh.material = newMaterials;
+function attachBottomsTexture(model: THREE.Object3D, imageUrl: string) {
+  const materialName = "bottoms";
+  // デニムの基本色（透明部分の埋め色）
+  const baseR = 90,
+    baseG = 110,
+    baseB = 140;
+
+  let targetMesh: THREE.SkinnedMesh | null = null;
+  model.traverse((child) => {
+    if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
+      targetMesh = child as THREE.SkinnedMesh;
+    }
+  });
+  if (!targetMesh) {
+    return;
+  }
+
+  const mesh = targetMesh as THREE.SkinnedMesh;
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  const groups = mesh.geometry.groups;
+  const matIndex = materials.findIndex((m) => m.name === materialName);
+  if (matIndex === -1) {
+    return;
+  }
+
+  const matchingGroups = groups.filter((g) => g.materialIndex === matIndex);
+  if (matchingGroups.length === 0) {
+    return;
+  }
+
+  // 頂点座標からUVを生成（正面プロジェクション）
+  const uv = mesh.geometry.attributes.uv;
+  const pos = mesh.geometry.attributes.position;
+  const index = mesh.geometry.index;
+
+  let minX = Infinity,
+    maxX = -Infinity,
+    minZ = Infinity,
+    maxZ = -Infinity;
+  for (const g of matchingGroups) {
+    for (let i = g.start; i < g.start + g.count; i++) {
+      const vi = index ? index.getX(i) : i;
+      minX = Math.min(minX, pos.getX(vi));
+      maxX = Math.max(maxX, pos.getX(vi));
+      minZ = Math.min(minZ, pos.getZ(vi));
+      maxZ = Math.max(maxZ, pos.getZ(vi));
+    }
+  }
+  const rangeX = maxX - minX || 1;
+  const rangeZ = maxZ - minZ || 1;
+  for (const g of matchingGroups) {
+    for (let i = g.start; i < g.start + g.count; i++) {
+      const vi = index ? index.getX(i) : i;
+      uv.setXY(vi, (pos.getX(vi) - minX) / rangeX, (pos.getZ(vi) - minZ) / rangeZ);
+    }
+  }
+  uv.needsUpdate = true;
+
+  // テクスチャ読み込み → クロップ + ピクセル単位で処理
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(imageUrl, (texture) => {
+    const img = texture.image as HTMLImageElement;
+
+    // 元画像をtmpCanvasに描画してピクセルデータ取得
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width = img.width;
+    tmpCanvas.height = img.height;
+    const tmpCtx = tmpCanvas.getContext("2d")!;
+    tmpCtx.drawImage(img, 0, 0);
+    const fullData = tmpCtx.getImageData(0, 0, img.width, img.height);
+    const fullPx = fullData.data;
+
+    // 不透過ピクセルのバウンディングボックスを検出（クロップ範囲）
+    let cMinX = img.width,
+      cMaxX = 0,
+      cMinY = img.height,
+      cMaxY = 0;
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        if (fullPx[(y * img.width + x) * 4 + 3] > 10) {
+          cMinX = Math.min(cMinX, x);
+          cMaxX = Math.max(cMaxX, x);
+          cMinY = Math.min(cMinY, y);
+          cMaxY = Math.max(cMaxY, y);
+        }
+      }
+    }
+    const cropW = cMaxX - cMinX + 1;
+    const cropH = cMaxY - cMinY + 1;
+
+    // クロップ範囲を透明Canvasに描画
+    const canvas = document.createElement("canvas");
+    canvas.width = cropW;
+    canvas.height = cropH;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, cMinX, cMinY, cropW, cropH, 0, 0, cropW, cropH);
+
+    // ピクセル単位でアルファ処理（RGBは一切触らない）
+    const imageData = ctx.getImageData(0, 0, cropW, cropH);
+    const pixels = imageData.data;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const a = pixels[i + 3];
+      if (a > 10) {
+        // premultiplied alphaを元に戻してからA=255にする
+        const factor = 255 / a;
+        pixels[i] = Math.min(255, Math.round(pixels[i] * factor));
+        pixels[i + 1] = Math.min(255, Math.round(pixels[i + 1] * factor));
+        pixels[i + 2] = Math.min(255, Math.round(pixels[i + 2] * factor));
+        pixels[i + 3] = 255;
+      } else {
+        pixels[i] = baseR;
+        pixels[i + 1] = baseG;
+        pixels[i + 2] = baseB;
+        pixels[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    const canvasTex = new THREE.CanvasTexture(canvas);
+    canvasTex.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.MeshBasicMaterial({
+      map: canvasTex,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+
+    const currentMaterials = Array.isArray(mesh.material) ? [...mesh.material] : [mesh.material];
+    currentMaterials[matIndex] = mat;
+    mesh.material = currentMaterials;
+    console.log(`[${materialName}] material set (pixel-level processing)`);
   });
 }
 
