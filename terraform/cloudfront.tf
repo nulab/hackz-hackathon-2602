@@ -4,6 +4,7 @@
 # 構成:
 #   デフォルト動作   → S3（admin / mobile / projector 静的ファイル）
 #   /trpc/*         → ALB（Hono バックエンド API・SSE）
+#   /peerjs/*       → ALB（PeerJS WebSocket シグナリング）
 #
 # SPA ルーティング:
 #   CloudFront Function で拡張子なしパスを各アプリの index.html に書き換え
@@ -85,8 +86,8 @@ resource "aws_cloudfront_function" "spa_routing" {
       var request = event.request;
       var uri = request.uri;
 
-      // API パスはそのまま転送
-      if (uri.startsWith('/trpc')) return request;
+      // API・PeerJS パスはそのまま転送
+      if (uri.startsWith('/trpc') || uri.startsWith('/peerjs')) return request;
 
       // 末尾スラッシュは index.html を補完
       if (uri.endsWith('/')) {
@@ -195,6 +196,31 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
 
     # キャッシュ完全無効（SSE・認証 API 用）
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+  }
+
+  # ----------------------------------------------------------
+  # /peerjs/* → ALB（PeerJS WebSocket シグナリング）
+  # WebSocket upgrade は CloudFront が自動処理
+  # ----------------------------------------------------------
+  ordered_cache_behavior {
+    path_pattern           = "/peerjs/*"
+    allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.alb_origin_id
+    viewer_protocol_policy = "https-only"
+    compress               = false
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Origin", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Protocol", "Sec-WebSocket-Extensions"]
+      cookies {
+        forward = "none"
+      }
+    }
+
     min_ttl     = 0
     default_ttl = 0
     max_ttl     = 0

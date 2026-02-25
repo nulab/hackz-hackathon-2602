@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getPeerServerConfig } from "@hackz/shared";
 import type { DownstreamMessage } from "@hackz/shared";
 import { AdminConnection } from "./AdminConnection";
 import type { AdminConnectionState } from "./AdminConnection";
+
+const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 export const useAdminConnection = () => {
   const connectionRef = useRef<AdminConnection | null>(null);
@@ -10,12 +13,17 @@ export const useAdminConnection = () => {
     null,
   );
 
-  const connect = useCallback((projectorPeerId: string) => {
-    const conn = new AdminConnection();
-    connectionRef.current = conn;
-    conn.onStateChange(setState);
-    conn.connect(projectorPeerId);
-  }, []);
+  const peerConfig = useMemo(() => getPeerServerConfig(API_URL), []);
+
+  const connect = useCallback(
+    (projectorPeerId: string) => {
+      const conn = new AdminConnection();
+      connectionRef.current = conn;
+      conn.onStateChange(setState);
+      conn.connect(projectorPeerId, peerConfig);
+    },
+    [peerConfig],
+  );
 
   const disconnect = useCallback(() => {
     connectionRef.current?.disconnect();
