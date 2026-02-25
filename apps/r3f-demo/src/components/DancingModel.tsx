@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
-export function DancingModel() {
+export const DancingModel = () => {
   const [scene, setScene] = useState<THREE.Group | null>(null);
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -70,14 +70,14 @@ export function DancingModel() {
     return null;
   }
   return <primitive object={scene} />;
-}
+};
 
-function attachTextureToGroup(
+const attachTextureToGroup = (
   model: THREE.Object3D,
   materialName: string,
   imageUrl: string,
   baseColor = "#ffffff",
-) {
+) => {
   let targetMesh: THREE.SkinnedMesh | null = null;
   model.traverse((child) => {
     if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
@@ -306,9 +306,9 @@ function attachTextureToGroup(
       currentMaterials.map((m, i) => `${i}:${m.type}`),
     );
   });
-}
+};
 
-function attachBottomsTexture(model: THREE.Object3D, imageUrl: string) {
+const attachBottomsTexture = (model: THREE.Object3D, imageUrl: string) => {
   const materialName = "bottoms";
   // デニムの基本色（透明部分の埋め色）
   const baseR = 90,
@@ -439,9 +439,9 @@ function attachBottomsTexture(model: THREE.Object3D, imageUrl: string) {
     mesh.material = currentMaterials;
     console.log(`[${materialName}] material set (pixel-level processing)`);
   });
-}
+};
 
-function findBone(model: THREE.Object3D, name: string): THREE.Bone | null {
+const findBone = (model: THREE.Object3D, name: string): THREE.Bone | null => {
   let found: THREE.Bone | null = null;
   model.traverse((child) => {
     if ((child as THREE.Bone).isBone && child.name === name) {
@@ -449,9 +449,9 @@ function findBone(model: THREE.Object3D, name: string): THREE.Bone | null {
     }
   });
   return found;
-}
+};
 
-function createDanceClip(model: THREE.Object3D): THREE.AnimationClip | null {
+const createDanceClip = (model: THREE.Object3D): THREE.AnimationClip | null => {
   const tracks: THREE.KeyframeTrack[] = [];
   const bpm = 120;
   const beatDuration = 60 / bpm;
@@ -656,4 +656,4 @@ function createDanceClip(model: THREE.Object3D): THREE.AnimationClip | null {
     return null;
   }
   return new THREE.AnimationClip("Dance", duration, tracks);
-}
+};
