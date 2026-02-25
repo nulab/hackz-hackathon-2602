@@ -10,7 +10,7 @@ terraform {
   # Stateファイルの保存先（事前に作成したバケット名を指定）
   backend "s3" {
     bucket         = "mtfstate-20260225"
-    key            = "network/terraform.tfstate"
+    key            = "terraform/terraform.tfstate"
     region         = "ap-northeast-1"
   }
 }

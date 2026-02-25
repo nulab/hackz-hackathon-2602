@@ -1,0 +1,27 @@
+# ============================================================
+# terraform.tfvars.example
+# このファイルを terraform.tfvars にコピーして値を設定してください
+# ============================================================
+
+# アプリ名プレフィックス（デフォルト: hackz-nulab-26）
+# app_name = "hackz-nulab-26"
+
+# S3 バケット名（デフォルト値のままで変更不要）
+# s3_uploads_bucket_name  = "hackz-nulab-26-uploads"
+# s3_contents_bucket_name = "hackz-nulab-26-contents"
+
+# GitHub リポジトリ URL
+github_repository_url = "https://github.com/yuukiiyotani/hackz-hackathon-2602"
+
+# GitHub Personal Access Token (scope: repo)
+# Amplify と GitHub を接続するために必要
+# コンソールで手動接続する場合は設定不要
+github_access_token = "ghp_xxxxxxxxxxxxxxxxxxxx"
+
+# JWT 署名シークレット（十分に長くランダムな文字列を設定）
+# 例: openssl rand -hex 32
+jwt_secret = "your-super-secret-jwt-signing-key-here"
+
+# App Runner のリソースサイズ（デフォルト: 1 vCPU / 2 GB）
+# apprunner_cpu    = "1 vCPU"
+# apprunner_memory = "2 GB"
