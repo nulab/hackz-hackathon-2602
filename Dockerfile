@@ -7,6 +7,9 @@ FROM oven/bun:1.3.9-slim AS deps
 
 WORKDIR /app
 
+# Install git (required by lefthook)
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 # ワークスペース設定と依存関係のマニフェストをコピー
 COPY bun.lock bunfig.toml turbo.json ./
 COPY package.json ./
