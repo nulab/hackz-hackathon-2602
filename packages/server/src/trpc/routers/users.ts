@@ -6,6 +6,7 @@ export const usersRouter = router({
   me: protectedProcedure.output(userProfileSchema).query(async ({ ctx }) => ({
     id: ctx.userId,
     name: `User-${ctx.userId.slice(0, 6)}`,
+    totalScore: 0,
   })),
 
   uploadPhoto: protectedProcedure

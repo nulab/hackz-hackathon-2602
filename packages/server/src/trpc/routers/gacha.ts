@@ -12,6 +12,7 @@ export const gachaRouter = router({
       id: `costume-${Date.now()}`,
       name: `Costume (${rarity})`,
       rarity,
+      category: "top" as const,
       imageUrl: "https://placeholder.example.com/costume.jpg",
       description: "A beautiful costume",
     };
@@ -23,6 +24,7 @@ export const gachaRouter = router({
       costumeId: costume.id,
       costumeName: costume.name,
       rarity: costume.rarity,
+      category: costume.category,
     });
 
     return { costume, isNew: true };
