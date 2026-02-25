@@ -6,6 +6,7 @@ import { costumesRouter } from "./costumes";
 import { sessionsRouter } from "./sessions";
 import { synthesisRouter } from "./synthesis";
 import { subscriptionRouter } from "./subscriptions";
+import { signalingRouter } from "./signaling";
 
 export const appRouter = router({
   auth: authRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   sessions: sessionsRouter,
   synthesis: synthesisRouter,
   sub: subscriptionRouter,
+  signaling: signalingRouter,
 });
 
 export type AppRouter = typeof appRouter;
