@@ -5,6 +5,7 @@ import type { RoomMessage } from "@hackz/shared";
 import { useRoomConnection } from "../hooks/useRoomConnection";
 import type { RoomConnectionState } from "../hooks/useRoomConnection";
 import { useRoomPolling } from "../hooks/useRoomPolling";
+import { trpc } from "../lib/trpc";
 
 type ScanEntry = {
   type: "NFC" | "QR";
@@ -39,6 +40,12 @@ const getStatusText = (state: RoomConnectionState): string => {
 const PairPage = () => {
   const { state, roomId, open, close, disconnectAdmin } = useRoomConnection();
   const [scans, setScans] = useState<ScanEntry[]>([]);
+  const [latestNfc, setLatestNfc] = useState<string | null>(null);
+  const [latestQr, setLatestQr] = useState<{ userId: string; token: string } | null>(null);
+  const [registerResult, setRegisterResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
   const openRef = useRef(open);
   const closeRef = useRef(close);
   openRef.current = open;
@@ -66,35 +73,49 @@ const PairPage = () => {
   const handleMessages = useCallback((messages: RoomMessage[]) => {
     for (const msg of messages) {
       switch (msg.type) {
-        case "NFC_SCANNED":
+        case "NFC_SCANNED": {
+          const nfcId = (msg.payload as { nfcId: string }).nfcId;
+          setLatestNfc(nfcId);
+          setScans((prev) =>
+            [{ type: "NFC" as const, data: nfcId, time: new Date() }, ...prev].slice(0, 50),
+          );
+          break;
+        }
+        case "QR_SCANNED": {
+          const qrPayload = msg.payload as { userId: string; token: string };
+          setLatestQr(qrPayload);
           setScans((prev) =>
             [
-              {
-                type: "NFC" as const,
-                data: (msg.payload as { nfcId: string }).nfcId,
-                time: new Date(),
-              },
+              { type: "QR" as const, data: `userId:${qrPayload.userId}`, time: new Date() },
               ...prev,
             ].slice(0, 50),
           );
           break;
-        case "QR_SCANNED":
-          setScans((prev) =>
-            [
-              {
-                type: "QR" as const,
-                data: (msg.payload as { data: string }).data,
-                time: new Date(),
-              },
-              ...prev,
-            ].slice(0, 50),
-          );
-          break;
+        }
       }
     }
   }, []);
 
   useRoomPolling(roomId, "upstream", 1000, handleMessages);
+
+  const registerPairing = trpc.auth.registerPairing.useMutation({
+    onSuccess: (data) => {
+      setRegisterResult({ success: true, message: `登録成功: ${data.user.name}` });
+      setLatestNfc(null);
+      setLatestQr(null);
+    },
+    onError: (error) => {
+      setRegisterResult({ success: false, message: error.message });
+    },
+  });
+
+  const handleRegister = useCallback(() => {
+    if (!latestNfc || !latestQr) {
+      return;
+    }
+    setRegisterResult(null);
+    registerPairing.mutate({ nfcId: latestNfc, userId: latestQr.userId, token: latestQr.token });
+  }, [latestNfc, latestQr, registerPairing]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
@@ -128,16 +149,62 @@ const PairPage = () => {
         </div>
       )}
 
-      {/* 接続済み: スキャン結果表示 */}
+      {/* 接続済み: ペアリング登録 + スキャン結果表示 */}
       {state === "connected" && (
         <div className="flex flex-col items-center gap-6 w-full max-w-2xl px-4">
           <h1 className="text-3xl font-bold">接続済み</h1>
-          <p className="text-green-400">Admin 端末からスキャンデータを受信中</p>
+
+          {/* ペアリングカード */}
+          <div className="w-full bg-gray-800 rounded-xl p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-center">ペアリング登録</h2>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* NFC */}
+              <div className="bg-gray-900 rounded-lg p-4 border border-indigo-700">
+                <p className="text-xs font-mono text-indigo-400 mb-1">NFC ID</p>
+                {latestNfc ? (
+                  <p className="text-sm font-mono break-all text-indigo-300">{latestNfc}</p>
+                ) : (
+                  <p className="text-sm text-gray-500">未受信</p>
+                )}
+              </div>
+
+              {/* QR */}
+              <div className="bg-gray-900 rounded-lg p-4 border border-teal-700">
+                <p className="text-xs font-mono text-teal-400 mb-1">QR userId</p>
+                {latestQr ? (
+                  <p className="text-sm font-mono break-all text-teal-300">{latestQr.userId}</p>
+                ) : (
+                  <p className="text-sm text-gray-500">未受信</p>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRegister}
+              disabled={!latestNfc || !latestQr || registerPairing.isPending}
+              className="w-full py-3 rounded-lg font-bold text-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {registerPairing.isPending ? "登録中..." : "登録"}
+            </button>
+
+            {registerResult && (
+              <p
+                className={`text-center text-sm ${registerResult.success ? "text-green-400" : "text-red-400"}`}
+              >
+                {registerResult.message}
+              </p>
+            )}
+          </div>
+
+          {/* スキャンログ */}
+          <p className="text-green-400 text-sm">Admin 端末からスキャンデータを受信中</p>
 
           {scans.length === 0 ? (
             <p className="text-gray-500 text-sm">まだスキャンデータはありません</p>
           ) : (
-            <div className="w-full space-y-2 max-h-[60vh] overflow-y-auto">
+            <div className="w-full space-y-2 max-h-[40vh] overflow-y-auto">
               {scans.map((scan, i) => (
                 <div
                   key={`${scan.time.getTime()}-${i}`}
