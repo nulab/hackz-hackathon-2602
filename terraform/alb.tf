@@ -1,6 +1,6 @@
 # ============================================================
 # ALB — Hono サーバーへの HTTP / HTTPS ロードバランサー
-# idle_timeout = 300s（SSE 長時間接続に対応）
+# idle_timeout = 60s（デフォルトのアイドルタイムアウト）
 #
 # HTTPS リスナー:
 #   var.acm_certificate_arn が設定されている場合のみ有効化
@@ -14,8 +14,8 @@ resource "aws_lb" "server" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = aws_subnet.public[*].id
 
-  # SSE サブスクリプションの長時間接続に対応するため 300 秒に設定
-  idle_timeout = 300
+  # デフォルトのアイドルタイムアウト
+  idle_timeout = 60
 
   tags = {
     App = var.app_name
