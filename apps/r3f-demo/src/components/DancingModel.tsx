@@ -428,6 +428,27 @@ export const DancingModel = () => {
           allClips.push(greeting);
         }
 
+        // 5. Hip Hop Dancing
+        const hipHop = await loadAnimationFromFBX("/models/Hip Hop Dancing.fbx");
+        if (hipHop) {
+          hipHop.name = "HipHopDancing";
+          allClips.push(hipHop);
+        }
+
+        // 6. Injured Walk Backwards
+        const injured = await loadAnimationFromFBX("/models/Injured Walk Backwards.fbx");
+        if (injured) {
+          injured.name = "InjuredWalkBackwards";
+          allClips.push(injured);
+        }
+
+        // 7. Flair
+        const flair = await loadAnimationFromFBX("/models/Flair.fbx");
+        if (flair) {
+          flair.name = "Flair";
+          allClips.push(flair);
+        }
+
         clips.current = allClips;
         console.log(
           `[Model] ${allClips.length} clips:`,
