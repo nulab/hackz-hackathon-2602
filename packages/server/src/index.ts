@@ -7,6 +7,7 @@ import { createContext } from "./trpc/context";
 import { corsMiddleware } from "./middleware/cors";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { roomStore } from "./room-store";
 
 const app = new Hono();
 
@@ -49,5 +50,10 @@ ExpressPeerServer(server, { path: "/peerjs", allow_discovery: false });
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
+// Room cleanup every 60 seconds
+setInterval(() => {
+  roomStore.cleanup();
+}, 60_000);
 
 export { app, appRouter };
