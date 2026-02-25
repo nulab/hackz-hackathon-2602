@@ -1,0 +1,30 @@
+.fallingItem {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  top: -10%;
+  animation: fall-down 8s linear infinite;
+}
+
+@keyframes fall-down {
+  0% {
+    top: -10%;
+    opacity: 0;
+    transform: rotate(0deg);
+  }
+  5% {
+    opacity: 0.2;
+  }
+  95% {
+    opacity: 0.2;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+    transform: rotate(720deg);
+  }
+}

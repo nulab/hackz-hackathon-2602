@@ -1,12 +1,17 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TRPCProvider } from "../lib/trpc-provider";
+import { ToastProvider } from "../components/Toast";
+import { FallingItems } from "../components/FallingItems";
 
 export const Route = createRootRoute({
   component: () => (
     <TRPCProvider>
-      <div className="min-h-screen bg-gray-50">
-        <Outlet />
-      </div>
+      <ToastProvider>
+        <FallingItems />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <Outlet />
+        </div>
+      </ToastProvider>
     </TRPCProvider>
   ),
 });

@@ -1,0 +1,35 @@
+@layer base {
+  :where(html) {
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    color: var(--color-text-default);
+    background-color: var(--color-background-default);
+  }
+
+  :where(body) {
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-default);
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  :where(h1) {
+    font-size: var(--font-size-heading-lg);
+  }
+
+  :where(a) {
+    color: var(--color-brand);
+    text-decoration: none;
+  }
+
+  :where(button) {
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+}

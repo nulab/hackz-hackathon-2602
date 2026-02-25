@@ -9,50 +9,121 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as UUserIdRouteImport } from './routes/u/$userId'
+import { Route as UUserIdIndexRouteImport } from './routes/u/$userId/index'
+import { Route as UUserIdCostumesRouteImport } from './routes/u/$userId/costumes'
+import { Route as UUserIdGachaCostumeKeyRouteImport } from './routes/u/$userId/gacha/$costumeKey'
 
-const IndexRoute = IndexRouteImport.update({
+const UUserIdRoute = UUserIdRouteImport.update({
+  id: '/u/$userId',
+  path: '/u/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UUserIdIndexRoute = UUserIdIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => UUserIdRoute,
+} as any)
+const UUserIdCostumesRoute = UUserIdCostumesRouteImport.update({
+  id: '/costumes',
+  path: '/costumes',
+  getParentRoute: () => UUserIdRoute,
+} as any)
+const UUserIdGachaCostumeKeyRoute = UUserIdGachaCostumeKeyRouteImport.update({
+  id: '/gacha/$costumeKey',
+  path: '/gacha/$costumeKey',
+  getParentRoute: () => UUserIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/u/$userId': typeof UUserIdRouteWithChildren
+  '/u/$userId/costumes': typeof UUserIdCostumesRoute
+  '/u/$userId/': typeof UUserIdIndexRoute
+  '/u/$userId/gacha/$costumeKey': typeof UUserIdGachaCostumeKeyRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/u/$userId/costumes': typeof UUserIdCostumesRoute
+  '/u/$userId': typeof UUserIdIndexRoute
+  '/u/$userId/gacha/$costumeKey': typeof UUserIdGachaCostumeKeyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/u/$userId': typeof UUserIdRouteWithChildren
+  '/u/$userId/costumes': typeof UUserIdCostumesRoute
+  '/u/$userId/': typeof UUserIdIndexRoute
+  '/u/$userId/gacha/$costumeKey': typeof UUserIdGachaCostumeKeyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/u/$userId'
+    | '/u/$userId/costumes'
+    | '/u/$userId/'
+    | '/u/$userId/gacha/$costumeKey'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/u/$userId/costumes' | '/u/$userId' | '/u/$userId/gacha/$costumeKey'
+  id:
+    | '__root__'
+    | '/u/$userId'
+    | '/u/$userId/costumes'
+    | '/u/$userId/'
+    | '/u/$userId/gacha/$costumeKey'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  UUserIdRoute: typeof UUserIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/u/$userId': {
+      id: '/u/$userId'
+      path: '/u/$userId'
+      fullPath: '/u/$userId'
+      preLoaderRoute: typeof UUserIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/u/$userId/': {
+      id: '/u/$userId/'
+      path: '/'
+      fullPath: '/u/$userId/'
+      preLoaderRoute: typeof UUserIdIndexRouteImport
+      parentRoute: typeof UUserIdRoute
+    }
+    '/u/$userId/costumes': {
+      id: '/u/$userId/costumes'
+      path: '/costumes'
+      fullPath: '/u/$userId/costumes'
+      preLoaderRoute: typeof UUserIdCostumesRouteImport
+      parentRoute: typeof UUserIdRoute
+    }
+    '/u/$userId/gacha/$costumeKey': {
+      id: '/u/$userId/gacha/$costumeKey'
+      path: '/gacha/$costumeKey'
+      fullPath: '/u/$userId/gacha/$costumeKey'
+      preLoaderRoute: typeof UUserIdGachaCostumeKeyRouteImport
+      parentRoute: typeof UUserIdRoute
     }
   }
 }
 
+interface UUserIdRouteChildren {
+  UUserIdCostumesRoute: typeof UUserIdCostumesRoute
+  UUserIdIndexRoute: typeof UUserIdIndexRoute
+  UUserIdGachaCostumeKeyRoute: typeof UUserIdGachaCostumeKeyRoute
+}
+
+const UUserIdRouteChildren: UUserIdRouteChildren = {
+  UUserIdCostumesRoute: UUserIdCostumesRoute,
+  UUserIdIndexRoute: UUserIdIndexRoute,
+  UUserIdGachaCostumeKeyRoute: UUserIdGachaCostumeKeyRoute,
+}
+
+const UUserIdRouteWithChildren =
+  UUserIdRoute._addFileChildren(UUserIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  UUserIdRoute: UUserIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

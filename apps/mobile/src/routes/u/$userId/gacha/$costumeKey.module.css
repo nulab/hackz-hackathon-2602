@@ -1,0 +1,11 @@
+.gachaResult {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
