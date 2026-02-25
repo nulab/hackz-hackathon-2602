@@ -15,7 +15,7 @@ COPY packages/shared/package.json  ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 
 # 依存関係をインストール
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # ============================================================
 FROM oven/bun:1.3.9-slim AS runner
