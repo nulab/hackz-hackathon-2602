@@ -1,6 +1,6 @@
 import { gachaResultSchema } from "@hackz/shared";
 import { protectedProcedure, router } from "../trpc";
-import { emitProjectorEvent } from "../ee";
+import { roomStore } from "../../room-store";
 import { pullGacha } from "../../domain/gacha";
 
 export const gachaRouter = router({
@@ -18,13 +18,15 @@ export const gachaRouter = router({
     };
 
     // Broadcast to projector subscribers
-    emitProjectorEvent({
+    roomStore.broadcast("projector", {
       type: "gacha:result",
-      userId: ctx.userId,
-      costumeId: costume.id,
-      costumeName: costume.name,
-      rarity: costume.rarity,
-      category: costume.category,
+      payload: {
+        userId: ctx.userId,
+        costumeId: costume.id,
+        costumeName: costume.name,
+        rarity: costume.rarity,
+        category: costume.category,
+      },
     });
 
     return { costume, isNew: true };
