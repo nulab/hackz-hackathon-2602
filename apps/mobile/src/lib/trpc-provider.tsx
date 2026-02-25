@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from "@trpc/client";
+import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from "@tanstack/react-query";
+import { TRPCClientError, httpBatchLink } from "@trpc/client";
 import { trpc } from "./trpc";
+import { emitAuthError } from "./auth-error";
 
 const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
@@ -18,8 +19,29 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+const isUnauthorizedError = (error: unknown): boolean =>
+  error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED";
+
 export const TRPCProvider = ({ children }: { children: React.ReactNode }) => {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        queryCache: new QueryCache({
+          onError: (error) => {
+            if (isUnauthorizedError(error)) {
+              emitAuthError();
+            }
+          },
+        }),
+        mutationCache: new MutationCache({
+          onError: (error) => {
+            if (isUnauthorizedError(error)) {
+              emitAuthError();
+            }
+          },
+        }),
+      }),
+  );
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
