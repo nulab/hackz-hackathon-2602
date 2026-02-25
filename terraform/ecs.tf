@@ -82,9 +82,9 @@ resource "aws_ecs_service" "server" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = [aws_subnet.private.id]
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = true # NAT Gateway なしで ECR からイメージを pull するために必要
+    assign_public_ip = false # プライベートサブネット + NAT Gateway 経由でアクセス
   }
 
   load_balancer {
