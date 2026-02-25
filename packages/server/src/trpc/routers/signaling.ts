@@ -7,13 +7,13 @@ import {
   closeRoomInputSchema,
 } from "@hackz/shared";
 import type { SignalingEvent } from "@hackz/shared";
-import { publicProcedure, protectedProcedure, router } from "../trpc";
+import { publicProcedure, router } from "../trpc";
 import { ee, emitSignalToProjector, emitSignalToAdmin } from "../ee";
 import { createRoom, getRoom, markAdminConnected, deleteRoom } from "../rooms";
 
 export const signalingRouter = router({
-  createRoom: protectedProcedure.output(createRoomOutputSchema).mutation(({ ctx }) => {
-    const room = createRoom(ctx.userId);
+  createRoom: publicProcedure.output(createRoomOutputSchema).mutation(({ ctx }) => {
+    const room = createRoom(ctx.userId ?? "projector");
     return { roomId: room.roomId };
   }),
 
@@ -48,7 +48,7 @@ export const signalingRouter = router({
     return { success: true };
   }),
 
-  closeRoom: protectedProcedure.input(closeRoomInputSchema).mutation(({ input }) => {
+  closeRoom: publicProcedure.input(closeRoomInputSchema).mutation(({ input }) => {
     const room = getRoom(input.roomId);
     if (!room) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Room not found" });
@@ -58,7 +58,7 @@ export const signalingRouter = router({
     return { success: true };
   }),
 
-  onSignalForProjector: protectedProcedure.input(joinRoomInputSchema).subscription(({ input }) =>
+  onSignalForProjector: publicProcedure.input(joinRoomInputSchema).subscription(({ input }) =>
     observable<SignalingEvent>((emit) => {
       const key = `signal:${input.roomId}:projector`;
       const handler = (event: SignalingEvent) => emit.next(event);
