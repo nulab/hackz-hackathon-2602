@@ -7,7 +7,8 @@
 #   private    10.0.2.0/24  AZ2  — ECS 用プライベート
 #
 # ECS はプライベートサブネットに配置。
-# NAT Gateway 経由で ECR / DynamoDB / S3 / Bedrock / Secrets Manager にアクセス。
+# VPC Endpoint 経由で ECR / S3 / Secrets Manager / CloudWatch Logs にアクセス。
+# NAT Gateway はその他のアウトバウンド通信（Bedrock 等）に使用。
 # ============================================================
 
 data "aws_availability_zones" "available" {
@@ -197,6 +198,107 @@ resource "aws_security_group" "ecs" {
 
   tags = {
     Name = "${var.app_name}-ecs-sg"
+    App  = var.app_name
+  }
+}
+
+# ----------------------------------------------------------
+# VPC Endpoints — Fargate タスク起動に必要な AWS サービス接続
+#
+# Interface Endpoint: ECR API / ECR DKR / Secrets Manager / CloudWatch Logs
+# Gateway Endpoint:   S3（ECR イメージレイヤーの取得に必要）
+#
+# これにより NAT Gateway に依存せず AWS サービスにアクセスできる。
+# ----------------------------------------------------------
+
+# Interface Endpoint 用セキュリティグループ（プライベートサブネットから HTTPS を許可）
+resource "aws_security_group" "vpc_endpoints" {
+  name   = "${var.app_name}-vpce-sg"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    description = "HTTPS from private subnet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_subnet.private.cidr_block]
+  }
+
+  tags = {
+    Name = "${var.app_name}-vpce-sg"
+    App  = var.app_name
+  }
+}
+
+# ECR API — イメージメタデータ取得
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.app_name}-ecr-api"
+    App  = var.app_name
+  }
+}
+
+# ECR DKR — Docker イメージ pull
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.app_name}-ecr-dkr"
+    App  = var.app_name
+  }
+}
+
+# Secrets Manager — JWT_SECRET 取得
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.app_name}-secretsmanager"
+    App  = var.app_name
+  }
+}
+
+# CloudWatch Logs — コンテナログ送信
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.app_name}-logs"
+    App  = var.app_name
+  }
+}
+
+# S3 — ECR イメージレイヤーは S3 に保存されている（Gateway 型 = 無料）
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id]
+
+  tags = {
+    Name = "${var.app_name}-s3"
     App  = var.app_name
   }
 }
