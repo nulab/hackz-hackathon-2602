@@ -5,8 +5,14 @@ import { z } from "zod";
 export const raritySchema = z.enum(["normal", "rare", "superRare", "ultraRare"]);
 export type Rarity = z.infer<typeof raritySchema>;
 
+export const costumeCategorySchema = z.enum(["top", "bottom", "accessory", "hair"]);
+export type CostumeCategory = z.infer<typeof costumeCategorySchema>;
+
 export const sessionStatusSchema = z.enum(["waiting", "active", "synthesizing", "completed"]);
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
+
+export const rankSchema = z.enum(["S", "A", "B", "C"]);
+export type Rank = z.infer<typeof rankSchema>;
 
 // === Domain Models ===
 
@@ -14,7 +20,8 @@ export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   photoUrl: z.string().optional(),
-  equippedCostumeId: z.string().optional(),
+  equippedBuildId: z.string().optional(),
+  totalScore: z.number().default(0),
   createdAt: z.string(),
 });
 export type User = z.infer<typeof userSchema>;
@@ -23,7 +30,8 @@ export const userProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
   photoUrl: z.string().optional(),
-  equippedCostumeId: z.string().optional(),
+  equippedBuildId: z.string().optional(),
+  totalScore: z.number(),
 });
 export type UserProfile = z.infer<typeof userProfileSchema>;
 
@@ -31,6 +39,7 @@ export const costumeSchema = z.object({
   id: z.string(),
   name: z.string(),
   rarity: raritySchema,
+  category: costumeCategorySchema,
   imageUrl: z.string(),
   description: z.string(),
 });
@@ -42,13 +51,37 @@ export const gachaResultSchema = z.object({
 });
 export type GachaResult = z.infer<typeof gachaResultSchema>;
 
+export const userCostumeSchema = z.object({
+  userId: z.string(),
+  costumeId: z.string(),
+  acquiredAt: z.string(),
+  count: z.number().min(1),
+});
+export type UserCostume = z.infer<typeof userCostumeSchema>;
+
+export const costumeBuildSchema = z.object({
+  userId: z.string(),
+  buildId: z.string(),
+  name: z.string(),
+  topId: z.string().optional(),
+  bottomId: z.string().optional(),
+  accessoryId: z.string().optional(),
+  hairId: z.string().optional(),
+  isDefault: z.boolean().default(false),
+  createdAt: z.string(),
+});
+export type CostumeBuild = z.infer<typeof costumeBuildSchema>;
+
 export const sessionSchema = z.object({
   id: z.string(),
   userId: z.string(),
   status: sessionStatusSchema,
-  costumeId: z.string(),
+  buildId: z.string(),
+  photoUrl: z.string(),
   progress: z.number(),
   videoUrl: z.string().optional(),
+  score: z.number().optional(),
+  rank: rankSchema.optional(),
   createdAt: z.string(),
 });
 export type SessionState = z.infer<typeof sessionSchema>;
@@ -72,12 +105,29 @@ export const photoUploadInputSchema = z.object({
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
 });
 
-export const equipCostumeInputSchema = z.object({
-  costumeId: z.string().min(1),
+export const equipBuildInputSchema = z.object({
+  buildId: z.string().min(1),
+});
+
+export const createBuildInputSchema = z.object({
+  name: z.string().min(1),
+  topId: z.string().optional(),
+  bottomId: z.string().optional(),
+  accessoryId: z.string().optional(),
+  hairId: z.string().optional(),
+});
+
+export const updateBuildInputSchema = z.object({
+  buildId: z.string().min(1),
+  name: z.string().min(1).optional(),
+  topId: z.string().nullable().optional(),
+  bottomId: z.string().nullable().optional(),
+  accessoryId: z.string().nullable().optional(),
+  hairId: z.string().nullable().optional(),
 });
 
 export const createSessionInputSchema = z.object({
-  costumeId: z.string().min(1),
+  buildId: z.string().min(1),
 });
 
 export const startSynthesisInputSchema = z.object({
@@ -102,6 +152,7 @@ export const gachaResultEventSchema = z.object({
   costumeId: z.string(),
   costumeName: z.string(),
   rarity: raritySchema,
+  category: costumeCategorySchema,
 });
 
 export const sessionUpdatedEventSchema = z.object({
