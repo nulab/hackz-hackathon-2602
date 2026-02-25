@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { uiImages } from "../assets/images";
 import styles from "./FallingItems.module.css";
 
-export function FallingItems() {
+export const FallingItems = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,4 +37,4 @@ export function FallingItems() {
       ))}
     </div>
   );
-}
+};

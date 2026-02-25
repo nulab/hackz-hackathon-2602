@@ -9,15 +9,15 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-export function useToast() {
+export const useToast = () => {
   const ctx = useContext(ToastContext);
   if (!ctx) {
     throw new Error("useToast must be used within ToastProvider");
   }
   return ctx;
-}
+};
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toast, setToast] = useState<{ message: string; type: ToastType; visible: boolean } | null>(
     null,
   );
@@ -48,4 +48,4 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       )}
     </ToastContext>
   );
-}
+};

@@ -10,7 +10,7 @@ import { saveSelection } from "../../../lib/api";
 import { uiImages, itemImages } from "../../../assets/images";
 import styles from "./costumes.module.css";
 
-function CostumesPage() {
+const CostumesPage = () => {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -138,7 +138,7 @@ function CostumesPage() {
       </div>
     </div>
   );
-}
+};
 
 export const Route = createFileRoute("/u/$userId/costumes")({
   component: CostumesPage,

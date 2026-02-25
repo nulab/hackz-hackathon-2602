@@ -8,7 +8,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function CameraCapture({ open, onCapture, onClose }: Props) {
+export const CameraCapture = ({ open, onCapture, onClose }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -97,4 +97,4 @@ export function CameraCapture({ open, onCapture, onClose }: Props) {
       </div>
     </div>
   );
-}
+};

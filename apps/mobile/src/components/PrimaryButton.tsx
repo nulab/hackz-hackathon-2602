@@ -10,7 +10,7 @@ type Props = {
   children: ReactNode;
 };
 
-export function PrimaryButton({ href, onClick, className = "", children }: Props) {
+export const PrimaryButton = ({ href, onClick, className = "", children }: Props) => {
   const cls = `${styles.primaryButton} ${className}`;
   const style = { backgroundImage: `url(${uiImages.button})` };
 
@@ -26,4 +26,4 @@ export function PrimaryButton({ href, onClick, className = "", children }: Props
       {children}
     </button>
   );
-}
+};

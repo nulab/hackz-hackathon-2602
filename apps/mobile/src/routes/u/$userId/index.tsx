@@ -8,7 +8,7 @@ import { drawGacha, addToInventory } from "../../../lib/api";
 import { uiImages, itemImages } from "../../../assets/images";
 import styles from "./index.module.css";
 
-function HomePage() {
+const HomePage = () => {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -92,7 +92,7 @@ function HomePage() {
       />
     </div>
   );
-}
+};
 
 export const Route = createFileRoute("/u/$userId/")({
   component: HomePage,

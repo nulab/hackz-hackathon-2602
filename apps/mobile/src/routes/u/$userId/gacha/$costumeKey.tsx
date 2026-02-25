@@ -4,7 +4,7 @@ import { cardImages, uiImages } from "../../../../assets/images";
 import { PrimaryButton } from "../../../../components/PrimaryButton";
 import styles from "./$costumeKey.module.css";
 
-function GachaResultPage() {
+const GachaResultPage = () => {
   const { userId, costumeKey } = Route.useParams();
   const item = ITEMS.find((i) => i.id === costumeKey);
 
@@ -36,7 +36,7 @@ function GachaResultPage() {
       </div>
     </div>
   );
-}
+};
 
 export const Route = createFileRoute("/u/$userId/gacha/$costumeKey")({
   component: GachaResultPage,
