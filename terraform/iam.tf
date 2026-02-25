@@ -1,13 +1,14 @@
 # ============================================================
-# IAM — App Runner 用ロール / Amplify 用ロール
+# IAM — ECS 実行ロール / ECS タスクロール
 # ============================================================
 
 # ----------------------------------------------------------
-# App Runner: ECR からイメージをプル（ビルドロール）
-# trust: build.apprunner.amazonaws.com
+# ECS 実行ロール
+# ECR からイメージを pull し CloudWatch Logs に書き込む
+# trust: ecs-tasks.amazonaws.com
 # ----------------------------------------------------------
-resource "aws_iam_role" "apprunner_ecr_access" {
-  name = "${var.app_name}-apprunner-ecr-access"
+resource "aws_iam_role" "ecs_execution" {
+  name = "${var.app_name}-ecs-execution"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -15,7 +16,7 @@ resource "aws_iam_role" "apprunner_ecr_access" {
       {
         Effect = "Allow"
         Principal = {
-          Service = "build.apprunner.amazonaws.com"
+          Service = "ecs-tasks.amazonaws.com"
         }
         Action = "sts:AssumeRole"
       }
@@ -27,18 +28,36 @@ resource "aws_iam_role" "apprunner_ecr_access" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "apprunner_ecr_access" {
-  role       = aws_iam_role.apprunner_ecr_access.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess"
+resource "aws_iam_role_policy_attachment" "ecs_execution" {
+  role       = aws_iam_role.ecs_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Secrets Manager から JWT_SECRET を取得する権限（タスク起動時に注入）
+resource "aws_iam_role_policy" "ecs_execution_secrets" {
+  name = "${var.app_name}-ecs-execution-secrets"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "GetJwtSecret"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.jwt_secret.arn
+      }
+    ]
+  })
 }
 
 # ----------------------------------------------------------
-# App Runner: インスタンスロール（サービス実行時の権限）
-# trust: tasks.apprunner.amazonaws.com
-# DynamoDB / S3 / Bedrock / Secrets Manager へのアクセス権を付与
+# ECS タスクロール
+# コンテナ内から各 AWS サービスにアクセスする権限
+# trust: ecs-tasks.amazonaws.com
 # ----------------------------------------------------------
-resource "aws_iam_role" "apprunner_instance" {
-  name = "${var.app_name}-apprunner-instance"
+resource "aws_iam_role" "ecs_task" {
+  name = "${var.app_name}-ecs-task"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -46,7 +65,7 @@ resource "aws_iam_role" "apprunner_instance" {
       {
         Effect = "Allow"
         Principal = {
-          Service = "tasks.apprunner.amazonaws.com"
+          Service = "ecs-tasks.amazonaws.com"
         }
         Action = "sts:AssumeRole"
       }
@@ -58,9 +77,9 @@ resource "aws_iam_role" "apprunner_instance" {
   }
 }
 
-resource "aws_iam_role_policy" "apprunner_instance" {
-  name = "${var.app_name}-apprunner-instance-policy"
-  role = aws_iam_role.apprunner_instance.id
+resource "aws_iam_role_policy" "ecs_task" {
+  name = "${var.app_name}-ecs-task-policy"
+  role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -94,11 +113,7 @@ resource "aws_iam_role_policy" "apprunner_instance" {
       {
         Sid    = "S3Uploads"
         Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Resource = [
           aws_s3_bucket.uploads.arn,
           "${aws_s3_bucket.uploads.arn}/*"
@@ -130,33 +145,4 @@ resource "aws_iam_role_policy" "apprunner_instance" {
       }
     ]
   })
-}
-
-# ----------------------------------------------------------
-# Amplify サービスロール（Amplify コンソールからのデプロイ用）
-# ----------------------------------------------------------
-resource "aws_iam_role" "amplify_service" {
-  name = "${var.app_name}-amplify-service"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "amplify.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  tags = {
-    App = var.app_name
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "amplify_service" {
-  role       = aws_iam_role.amplify_service.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess-Amplify"
 }
