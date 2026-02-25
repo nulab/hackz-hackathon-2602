@@ -56,6 +56,14 @@ jobs:
         run: terraform init -input=false
         working-directory: terraform
 
+      - name: Migrate subnet state (one-time)
+        run: |
+          # public[1] (10.0.2.0/24) を private にリネーム。
+          # CIDR 変更による forced replacement を回避（ALB ENI がサブネット削除をブロックするため）。
+          # 移行済みの場合は no-op。
+          terraform state mv 'aws_subnet.public[1]' aws_subnet.private 2>/dev/null || true
+        working-directory: terraform
+
       - name: Terraform Plan
         run: terraform plan -input=false
         working-directory: terraform
