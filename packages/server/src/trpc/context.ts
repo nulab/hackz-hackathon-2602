@@ -3,6 +3,7 @@ import { verifyToken } from "../lib/jwt";
 
 export const createContext = async ({ req }: FetchCreateContextFnOptions) => {
   const authorization = req.headers.get("Authorization");
+  const userToken = req.headers.get("X-User-Token");
   let userId: string | null = null;
 
   if (authorization?.startsWith("Bearer ")) {
@@ -11,7 +12,7 @@ export const createContext = async ({ req }: FetchCreateContextFnOptions) => {
     userId = payload?.sub ?? null;
   }
 
-  return { userId };
+  return { userId, userToken };
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
