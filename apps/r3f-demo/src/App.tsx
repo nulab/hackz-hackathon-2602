@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { DancingModel } from "./components/DancingModel";
+import { DebugSkeleton } from "./components/DebugSkeleton";
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
           shadow-mapSize-height={1024}
         />
         <DancingModel />
+        <DebugSkeleton url="/models/KissWithSkin.fbx" offsetX={2} />
         <axesHelper args={[2]} />
         <OrbitControls target={[0, 1, 0]} minDistance={1.5} maxDistance={8} />
         <gridHelper args={[10, 10, "#888888", "#444444"]} />
