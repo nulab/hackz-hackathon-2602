@@ -19,6 +19,7 @@ export type Rank = z.infer<typeof rankSchema>;
 export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
+  token: z.string(),
   photoUrl: z.string().optional(),
   equippedBuildId: z.string().optional(),
   totalScore: z.number().default(0),
@@ -177,3 +178,64 @@ export const sessionEventSchema = z.union([
   synthesisCompletedEventSchema,
 ]);
 export type SessionEvent = z.infer<typeof sessionEventSchema>;
+
+// === Room Polling Schemas ===
+
+export const roomChannelSchema = z.enum(["upstream", "downstream", "projector"]);
+export type RoomChannel = z.infer<typeof roomChannelSchema>;
+
+export const roomRoleSchema = z.enum(["admin", "projector"]);
+export type RoomRole = z.infer<typeof roomRoleSchema>;
+
+export const roomMessageSchema = z.object({
+  id: z.number(),
+  type: z.string(),
+  payload: z.unknown(),
+  createdAt: z.number(),
+});
+export type RoomMessage = z.infer<typeof roomMessageSchema>;
+
+// Room procedure inputs
+export const roomJoinInputSchema = z.object({
+  roomId: z.string().uuid(),
+});
+
+export const roomSendInputSchema = z.object({
+  roomId: z.string().uuid(),
+  channel: roomChannelSchema,
+  message: z.object({
+    type: z.string(),
+    payload: z.unknown(),
+  }),
+});
+
+export const roomPollInputSchema = z.object({
+  roomId: z.string().uuid(),
+  channel: z.string(),
+  afterId: z.number().optional(),
+});
+
+export const roomHeartbeatInputSchema = z.object({
+  roomId: z.string().uuid(),
+  role: roomRoleSchema,
+});
+
+export const roomDisconnectInputSchema = z.object({
+  roomId: z.string().uuid(),
+  role: roomRoleSchema,
+});
+
+// Room procedure outputs
+export const roomCreateOutputSchema = z.object({
+  roomId: z.string().uuid(),
+});
+
+export const roomPollOutputSchema = z.object({
+  messages: z.array(roomMessageSchema),
+  lastId: z.number(),
+});
+
+export const roomHeartbeatOutputSchema = z.object({
+  peerConnected: z.boolean(),
+  peerLastSeen: z.number(),
+});

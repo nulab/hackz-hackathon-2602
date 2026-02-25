@@ -1,13 +1,21 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, splitLink, unstable_httpSubscriptionLink } from "@trpc/client";
+import { httpBatchLink } from "@trpc/client";
 import { trpc } from "./trpc";
 
 const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 const getAuthHeaders = () => {
+  const headers: Record<string, string> = {};
   const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const userToken = localStorage.getItem("userToken");
+  if (userToken) {
+    headers["X-User-Token"] = userToken;
+  }
+  return headers;
 };
 
 export const TRPCProvider = ({ children }: { children: React.ReactNode }) => {
@@ -15,15 +23,9 @@ export const TRPCProvider = ({ children }: { children: React.ReactNode }) => {
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        splitLink({
-          condition: (op) => op.type === "subscription",
-          true: unstable_httpSubscriptionLink({
-            url: API_URL,
-          }),
-          false: httpBatchLink({
-            url: API_URL,
-            headers: getAuthHeaders,
-          }),
+        httpBatchLink({
+          url: API_URL,
+          headers: getAuthHeaders,
         }),
       ],
     }),

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
-import type { UpstreamMessage } from "@hackz/shared";
-import { useProjectorConnection } from "../webrtc/useProjectorConnection";
-import type { ProjectorConnectionState } from "../webrtc/ProjectorConnection";
+import type { RoomMessage } from "@hackz/shared";
+import { useRoomConnection } from "../hooks/useRoomConnection";
+import type { RoomConnectionState } from "../hooks/useRoomConnection";
+import { useRoomPolling } from "../hooks/useRoomPolling";
 
 type ScanEntry = {
   type: "NFC" | "QR";
@@ -13,12 +14,10 @@ type ScanEntry = {
 
 const ADMIN_BASE = import.meta.env.VITE_ADMIN_URL || "/hackz-hackathon-2602/admin";
 
-const getStatusColor = (state: ProjectorConnectionState): string => {
+const getStatusColor = (state: RoomConnectionState): string => {
   switch (state) {
     case "connected":
       return "bg-green-500";
-    case "connecting":
-      return "bg-yellow-500 animate-pulse";
     case "waiting":
       return "bg-blue-500 animate-pulse";
     default:
@@ -26,12 +25,10 @@ const getStatusColor = (state: ProjectorConnectionState): string => {
   }
 };
 
-const getStatusText = (state: ProjectorConnectionState): string => {
+const getStatusText = (state: RoomConnectionState): string => {
   switch (state) {
     case "connected":
       return "Admin 接続中";
-    case "connecting":
-      return "接続中...";
     case "waiting":
       return "Admin 待ち";
     default:
@@ -40,8 +37,7 @@ const getStatusText = (state: ProjectorConnectionState): string => {
 };
 
 const PairPage = () => {
-  const { state, roomId, open, close, disconnectAdmin, onMessage } = useProjectorConnection();
-  const [pairUrl, setPairUrl] = useState<string | null>(null);
+  const { state, roomId, open, close, disconnectAdmin } = useRoomConnection();
   const [scans, setScans] = useState<ScanEntry[]>([]);
   const openRef = useRef(open);
   const closeRef = useRef(close);
@@ -59,36 +55,48 @@ const PairPage = () => {
   }, []);
 
   // ペアリングURL生成
-  useEffect(() => {
-    if (!roomId) {
-      return;
-    }
-    const base = ADMIN_BASE.startsWith("http")
-      ? ADMIN_BASE
-      : `${window.location.origin}${ADMIN_BASE}`;
-    const url = `${base.replace(/\/$/, "")}/connect/${roomId}`;
-    setPairUrl(url);
-  }, [roomId]);
+  const pairUrl = roomId
+    ? (() => {
+        const base = ADMIN_BASE.startsWith("http")
+          ? ADMIN_BASE
+          : `${window.location.origin}${ADMIN_BASE}`;
+        return `${base.replace(/\/$/, "")}/connect/${roomId}`;
+      })()
+    : null;
 
   // Admin からのメッセージ
-  const handleMessage = useCallback((msg: UpstreamMessage) => {
-    switch (msg.type) {
-      case "NFC_SCANNED":
-        setScans((prev) =>
-          [{ type: "NFC" as const, data: msg.nfcId, time: new Date() }, ...prev].slice(0, 50),
-        );
-        break;
-      case "QR_SCANNED":
-        setScans((prev) =>
-          [{ type: "QR" as const, data: msg.data, time: new Date() }, ...prev].slice(0, 50),
-        );
-        break;
+  const handleMessages = useCallback((messages: RoomMessage[]) => {
+    for (const msg of messages) {
+      switch (msg.type) {
+        case "NFC_SCANNED":
+          setScans((prev) =>
+            [
+              {
+                type: "NFC" as const,
+                data: (msg.payload as { nfcId: string }).nfcId,
+                time: new Date(),
+              },
+              ...prev,
+            ].slice(0, 50),
+          );
+          break;
+        case "QR_SCANNED":
+          setScans((prev) =>
+            [
+              {
+                type: "QR" as const,
+                data: (msg.payload as { data: string }).data,
+                time: new Date(),
+              },
+              ...prev,
+            ].slice(0, 50),
+          );
+          break;
+      }
     }
   }, []);
 
-  useEffect(() => {
-    onMessage(handleMessage);
-  }, [onMessage, handleMessage]);
+  useRoomPolling(roomId, "upstream", 1000, handleMessages);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">

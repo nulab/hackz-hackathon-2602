@@ -5,7 +5,7 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
 export const DancingModel = () => {
   const [scene, setScene] = useState<THREE.Group | null>(null);
-  const mixer = useRef<THREE.AnimationMixer | null>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
     const loader = new FBXLoader();
@@ -39,14 +39,6 @@ export const DancingModel = () => {
         attachTextureToGroup(fbx, "tops", "/models/sozai_tops.png", "#e8a0b8");
         attachBottomsTexture(fbx, "/models/sozai_bottoms_vivid.png");
 
-        // ダンスアニメーション
-        mixer.current = new THREE.AnimationMixer(fbx);
-        const clip = createDanceClip(fbx);
-        if (clip) {
-          const action = mixer.current.clipAction(clip);
-          action.play();
-        }
-
         setScene(fbx);
       },
       undefined,
@@ -54,21 +46,22 @@ export const DancingModel = () => {
         // FBX load error
       },
     );
-
-    return () => {
-      mixer.current?.stopAllAction();
-      mixer.current = null;
-    };
   }, []);
 
   useFrame((_, delta) => {
-    mixer.current?.update(delta);
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.5;
+    }
   });
 
   if (!scene) {
     return null;
   }
-  return <primitive object={scene} />;
+  return (
+    <group ref={groupRef}>
+      <primitive object={scene} />
+    </group>
+  );
 };
 
 const attachTextureToGroup = (
@@ -401,219 +394,4 @@ const attachBottomsTexture = (model: THREE.Object3D, imageUrl: string) => {
     currentMaterials[matIndex] = mat;
     mesh.material = currentMaterials;
   });
-};
-
-const findBone = (model: THREE.Object3D, name: string): THREE.Bone | null => {
-  let found: THREE.Bone | null = null;
-  model.traverse((child) => {
-    if ((child as THREE.Bone).isBone && child.name === name) {
-      found = child as THREE.Bone;
-    }
-  });
-  return found;
-};
-
-const createDanceClip = (model: THREE.Object3D): THREE.AnimationClip | null => {
-  const tracks: THREE.KeyframeTrack[] = [];
-  const bpm = 120;
-  const beatDuration = 60 / bpm;
-  const duration = beatDuration * 8; // 8拍分
-  const steps = 64;
-  const times = Array.from({ length: steps + 1 }, (_, i) => (i / steps) * duration);
-
-  const beat = (t: number) => t / beatDuration;
-
-  // --- spine (ルートボーン): 上下バウンス ---
-  const spine = findBone(model, "spine");
-  if (spine) {
-    const baseY = spine.position.y;
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "spine.position[y]",
-        times,
-        times.map((t) => baseY + Math.sin(beat(t) * Math.PI * 2) * 0.03),
-      ),
-    );
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "spine.rotation[z]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI) * 0.06),
-      ),
-    );
-  }
-
-  // --- spine001: 胴体のツイスト ---
-  const spine001 = findBone(model, "spine001");
-  if (spine001) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "spine001.rotation[y]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI) * 0.1),
-      ),
-    );
-  }
-
-  // --- spine003: 上体の前後ノリ ---
-  const spine003 = findBone(model, "spine003");
-  if (spine003) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "spine003.rotation[x]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2) * 0.05),
-      ),
-    );
-  }
-
-  // --- 右腕: 振り上げ ---
-  const upperArmR = findBone(model, "upper_armR");
-  if (upperArmR) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "upper_armR.rotation[z]",
-        times,
-        times.map((t) => -1.2 + Math.sin(beat(t) * Math.PI) * 0.4),
-      ),
-    );
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "upper_armR.rotation[x]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2) * 0.3),
-      ),
-    );
-  }
-
-  // --- 左腕: 逆位相で振り ---
-  const upperArmL = findBone(model, "upper_armL");
-  if (upperArmL) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "upper_armL.rotation[z]",
-        times,
-        times.map((t) => 1.2 + Math.sin(beat(t) * Math.PI + Math.PI) * 0.4),
-      ),
-    );
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "upper_armL.rotation[x]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2 + Math.PI) * 0.3),
-      ),
-    );
-  }
-
-  // --- 前腕: 曲げ ---
-  const forearmR = findBone(model, "forearmR");
-  if (forearmR) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "forearmR.rotation[z]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2) * 0.3 - 0.2),
-      ),
-    );
-  }
-  const forearmL = findBone(model, "forearmL");
-  if (forearmL) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "forearmL.rotation[z]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2 + Math.PI) * 0.3 + 0.2),
-      ),
-    );
-  }
-
-  // --- 右脚: ステップ ---
-  const thighR = findBone(model, "thighR");
-  if (thighR) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "thighR.rotation[x]",
-        times,
-        times.map((t) => Math.max(0, Math.sin(beat(t) * Math.PI * 2)) * 0.3),
-      ),
-    );
-  }
-  const shinR = findBone(model, "shinR");
-  if (shinR) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "shinR.rotation[x]",
-        times,
-        times.map((t) => Math.max(0, Math.sin(beat(t) * Math.PI * 2)) * -0.4),
-      ),
-    );
-  }
-
-  // --- 左脚: 逆位相ステップ ---
-  const thighL = findBone(model, "thighL");
-  if (thighL) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "thighL.rotation[x]",
-        times,
-        times.map((t) => Math.max(0, Math.sin(beat(t) * Math.PI * 2 + Math.PI)) * 0.3),
-      ),
-    );
-  }
-  const shinL = findBone(model, "shinL");
-  if (shinL) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "shinL.rotation[x]",
-        times,
-        times.map((t) => Math.max(0, Math.sin(beat(t) * Math.PI * 2 + Math.PI)) * -0.4),
-      ),
-    );
-  }
-
-  // --- 頭: リズムに合わせて揺れ ---
-  const spine006 = findBone(model, "spine006");
-  if (spine006) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "spine006.rotation[z]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI) * 0.08),
-      ),
-    );
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "spine006.rotation[x]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2) * 0.05),
-      ),
-    );
-  }
-
-  // --- 肩: 上下 ---
-  const shoulderR = findBone(model, "shoulderR");
-  if (shoulderR) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "shoulderR.rotation[z]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2) * 0.05),
-      ),
-    );
-  }
-  const shoulderL = findBone(model, "shoulderL");
-  if (shoulderL) {
-    tracks.push(
-      new THREE.NumberKeyframeTrack(
-        "shoulderL.rotation[z]",
-        times,
-        times.map((t) => Math.sin(beat(t) * Math.PI * 2 + Math.PI) * 0.05),
-      ),
-    );
-  }
-
-  if (tracks.length === 0) {
-    return null;
-  }
-  return new THREE.AnimationClip("Dance", duration, tracks);
 };
