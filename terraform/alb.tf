@@ -1,6 +1,10 @@
 # ============================================================
-# ALB — Hono サーバーへの HTTP ロードバランサー
+# ALB — Hono サーバーへの HTTP / HTTPS ロードバランサー
 # idle_timeout = 300s（SSE 長時間接続に対応）
+#
+# HTTPS リスナー:
+#   var.acm_certificate_arn が設定されている場合のみ有効化
+#   未設定時は HTTP(80) のみで動作（CloudFront → ALB は http-only のため影響なし）
 # ============================================================
 
 resource "aws_lb" "server" {
@@ -40,10 +44,26 @@ resource "aws_lb_target_group" "server" {
   }
 }
 
+# HTTP リスナー（port 80）
 resource "aws_lb_listener" "server" {
   load_balancer_arn = aws_lb.server.arn
   port              = 80
   protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.server.arn
+  }
+}
+
+# HTTPS リスナー（port 443）— acm_certificate_arn が設定されている場合のみ作成
+resource "aws_lb_listener" "server_https" {
+  count             = var.acm_certificate_arn != "" ? 1 : 0
+  load_balancer_arn = aws_lb.server.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.acm_certificate_arn
 
   default_action {
     type             = "forward"
