@@ -5,12 +5,7 @@ const searchSchema = z.object({
   token: z.string().optional(),
 });
 
-export const Route = createFileRoute("/u/$userId")({
-  validateSearch: searchSchema,
-  component: UserLayout,
-});
-
-function UserLayout() {
+const UserLayout = () => {
   const { token } = Route.useSearch();
 
   if (token) {
@@ -18,4 +13,9 @@ function UserLayout() {
   }
 
   return <Outlet />;
-}
+};
+
+export const Route = createFileRoute("/u/$userId")({
+  validateSearch: searchSchema,
+  component: UserLayout,
+});

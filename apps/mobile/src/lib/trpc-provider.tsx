@@ -27,7 +27,6 @@ export const TRPCProvider = ({ children }: { children: React.ReactNode }) => {
           condition: (op) => op.type === "subscription",
           true: unstable_httpSubscriptionLink({
             url: API_URL,
-            headers: getAuthHeaders,
           }),
           false: httpBatchLink({
             url: API_URL,
