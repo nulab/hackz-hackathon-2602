@@ -5,6 +5,7 @@ import { CameraCapture } from "../../../components/CameraCapture";
 import { storage } from "../../../lib/storage";
 import { ITEMS } from "../../../lib/items";
 import { drawGacha, addToInventory } from "../../../lib/api";
+import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
 import { uiImages, itemImages } from "../../../assets/images";
 import styles from "./index.module.css";
 
@@ -38,15 +39,7 @@ const HomePage = () => {
 
       <div className={styles.characterSection}>
         <div className={styles.characterImage}>
-          {photo ? (
-            <img src={photo} alt="撮影した写真" className={styles.photoPreview} />
-          ) : (
-            <img
-              src={uiImages.defaultChar}
-              alt="デフォルト画像"
-              className={styles.characterPlaceholder}
-            />
-          )}
+          <DancingModelCanvas />
           {selectedItems.length > 0 && (
             <div className={styles.characterBadges}>
               {selectedItems.map((item) => (
