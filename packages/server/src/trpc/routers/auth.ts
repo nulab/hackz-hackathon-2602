@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { nfcLoginInputSchema, userSchema } from "@hackz/shared";
+import { nfcLoginInputSchema, registerPairingInputSchema, userSchema } from "@hackz/shared";
+import { TRPCError } from "@trpc/server";
+import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import { publicProcedure, router } from "../trpc";
 import { signToken } from "../../lib/jwt";
 import { createDynamoDBUserRepository } from "../../repositories/dynamodb/user-repository";
@@ -43,5 +45,52 @@ export const authRouter = router({
           createdAt: user.createdAt,
         },
       };
+    }),
+
+  registerPairing: publicProcedure
+    .input(registerPairingInputSchema)
+    .output(z.object({ user: userSchema }))
+    .mutation(async ({ input }) => {
+      const { nfcId, userId, token } = input;
+
+      // Check if another user already has this NFC ID
+      const existingUser = await userRepository.findByNfcId(nfcId);
+      if (existingUser) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `NFC ID "${nfcId}" is already registered to another user`,
+        });
+      }
+
+      try {
+        const user = await userRepository.create({
+          id: userId,
+          nfcId,
+          token,
+          name: `User-${userId}`,
+          totalScore: 0,
+          createdAt: new Date().toISOString(),
+        });
+
+        return {
+          user: {
+            id: user.id,
+            name: user.name,
+            token: user.token,
+            photoUrl: user.photoUrl,
+            equippedBuildId: user.equippedBuildId,
+            totalScore: user.totalScore,
+            createdAt: user.createdAt,
+          },
+        };
+      } catch (error) {
+        if (error instanceof ConditionalCheckFailedException) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: `User with ID "${userId}" already exists`,
+          });
+        }
+        throw error;
+      }
     }),
 });

@@ -139,6 +139,12 @@ export const nfcScanInputSchema = z.object({
   nfcId: z.string().min(1),
 });
 
+export const registerPairingInputSchema = z.object({
+  nfcId: z.string().min(1),
+  userId: z.string().min(1),
+  token: z.string().uuid(),
+});
+
 // === SSE Event Schemas ===
 
 export const nfcScannedEventSchema = z.object({

@@ -59,10 +59,29 @@ export const useAdminRoomConnection = () => {
     if (!roomIdRef.current) {
       return;
     }
+
+    // Parse QR URL: https://df1iy5670vkdy.cloudfront.net/u/{userId}?token={uuid}
+    let url: URL;
+    try {
+      url = new URL(data);
+    } catch {
+      return;
+    }
+
+    const pathMatch = url.pathname.match(/^\/u\/(.+)$/);
+    if (!pathMatch) {
+      return;
+    }
+    const userId = pathMatch[1];
+    const token = url.searchParams.get("token");
+    if (!userId || !token) {
+      return;
+    }
+
     sendRef.current({
       roomId: roomIdRef.current,
       channel: "upstream",
-      message: { type: "QR_SCANNED", payload: { data } },
+      message: { type: "QR_SCANNED", payload: { userId, token } },
     });
   }, []);
 
