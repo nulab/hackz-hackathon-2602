@@ -1,3 +1,7 @@
 [install]
 # Save exact versions
 exact = true
+
+[scripts]
+# Skip lefthook installation (requires git in Docker)
+ignore = ["lefthook"]
