@@ -13,7 +13,7 @@ const HomePage = () => {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [photo, setPhoto] = useState(() => storage.getPhoto());
+  const [_photo, setPhoto] = useState(() => storage.getPhoto());
   const selectedItemIds = storage.getSelectedItems();
   const selectedItems = selectedItemIds
     .map((id) => ITEMS.find((item) => item.id === id))

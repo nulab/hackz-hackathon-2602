@@ -3,55 +3,48 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
-export function DancingModel() {
+export const DancingModel = () => {
   const [scene, setScene] = useState<THREE.Group | null>(null);
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
   useEffect(() => {
     const loader = new FBXLoader();
 
-    loader.load(
-      "/models/womam_with_born_and_separeted_head_body.fbx",
-      (fbx) => {
-        fbx.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-
-        // Z-up → Y-up に変換（Blenderエクスポート設定による）
-        fbx.rotation.x = -Math.PI / 2;
-        fbx.updateMatrixWorld(true);
-
-        // 高さ1.5mになるようスケール
-        const box = new THREE.Box3().setFromObject(fbx);
-        const size = box.getSize(new THREE.Vector3());
-        const scale = 1.5 / size.y;
-        fbx.scale.setScalar(scale);
-
-        // 地面に立たせる
-        const adjustedBox = new THREE.Box3().setFromObject(fbx);
-        fbx.position.y = -adjustedBox.min.y;
-
-        // 顔テクスチャを頭メッシュに直接マッピング
-        attachFaceTextureToMesh(fbx, "https://picsum.photos/512");
-
-        // ダンスアニメーション
-        mixer.current = new THREE.AnimationMixer(fbx);
-        const clip = createDanceClip(fbx);
-        if (clip) {
-          const action = mixer.current.clipAction(clip);
-          action.play();
+    loader.load("/models/womam_with_born_and_separeted_head_body.fbx", (fbx) => {
+      fbx.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
+      });
 
-        setScene(fbx);
-      },
-      undefined,
-      (error) => {
-        console.error("FBX load error:", error);
-      },
-    );
+      // Z-up → Y-up に変換（Blenderエクスポート設定による）
+      fbx.rotation.x = -Math.PI / 2;
+      fbx.updateMatrixWorld(true);
+
+      // 高さ1.5mになるようスケール
+      const box = new THREE.Box3().setFromObject(fbx);
+      const size = box.getSize(new THREE.Vector3());
+      const scale = 1.5 / size.y;
+      fbx.scale.setScalar(scale);
+
+      // 地面に立たせる
+      const adjustedBox = new THREE.Box3().setFromObject(fbx);
+      fbx.position.y = -adjustedBox.min.y;
+
+      // 顔テクスチャを頭メッシュに直接マッピング
+      attachFaceTextureToMesh(fbx, "https://picsum.photos/512");
+
+      // ダンスアニメーション
+      mixer.current = new THREE.AnimationMixer(fbx);
+      const clip = createDanceClip(fbx);
+      if (clip) {
+        const action = mixer.current.clipAction(clip);
+        action.play();
+      }
+
+      setScene(fbx);
+    });
 
     return () => {
       mixer.current?.stopAllAction();
@@ -67,9 +60,9 @@ export function DancingModel() {
     return null;
   }
   return <primitive object={scene} />;
-}
+};
 
-function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
+const attachFaceTextureToMesh = (model: THREE.Object3D, imageUrl: string) => {
   let targetMesh: THREE.SkinnedMesh | null = null;
   model.traverse((child) => {
     if ((child as THREE.SkinnedMesh).isSkinnedMesh) {
@@ -88,10 +81,6 @@ function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
   // headマテリアルのインデックスを探す
   const headIndex = materials.findIndex((m) => m.name === "head");
   if (headIndex === -1) {
-    console.warn(
-      "head material not found, available:",
-      materials.map((m) => m.name),
-    );
     return;
   }
 
@@ -170,9 +159,9 @@ function attachFaceTextureToMesh(model: THREE.Object3D, imageUrl: string) {
     newMaterials[headIndex] = headMat;
     mesh.material = newMaterials;
   });
-}
+};
 
-function findBone(model: THREE.Object3D, name: string): THREE.Bone | null {
+const findBone = (model: THREE.Object3D, name: string): THREE.Bone | null => {
   let found: THREE.Bone | null = null;
   model.traverse((child) => {
     if ((child as THREE.Bone).isBone && child.name === name) {
@@ -180,9 +169,9 @@ function findBone(model: THREE.Object3D, name: string): THREE.Bone | null {
     }
   });
   return found;
-}
+};
 
-function createDanceClip(model: THREE.Object3D): THREE.AnimationClip | null {
+const createDanceClip = (model: THREE.Object3D): THREE.AnimationClip | null => {
   const tracks: THREE.KeyframeTrack[] = [];
   const bpm = 120;
   const beatDuration = 60 / bpm;
@@ -387,4 +376,4 @@ function createDanceClip(model: THREE.Object3D): THREE.AnimationClip | null {
     return null;
   }
   return new THREE.AnimationClip("Dance", duration, tracks);
-}
+};
