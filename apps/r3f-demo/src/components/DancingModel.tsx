@@ -414,6 +414,13 @@ export const DancingModel = () => {
           allClips.push(capoeira);
         }
 
+        // 3. HacuchoDancing
+        const hacucho = await loadAnimationFromFBX("/models/HacuchoDancing.fbx");
+        if (hacucho) {
+          hacucho.name = "HacuchoDancing";
+          allClips.push(hacucho);
+        }
+
         clips.current = allClips;
         console.log(
           `[Model] ${allClips.length} clips:`,
