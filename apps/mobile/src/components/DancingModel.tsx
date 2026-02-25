@@ -286,62 +286,45 @@ export const DancingModel = () => {
   useEffect(() => {
     const loader = new FBXLoader();
 
-    loader.load(
-      "/models/KissWithSkin.fbx",
-      async (fbx) => {
-        console.log("[Model] KissWithSkin.fbx loaded");
-        fbx.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-
-        // スケール調整（1.5m目標）
-        const box = new THREE.Box3().setFromObject(fbx);
-        const size = box.getSize(new THREE.Vector3());
-        fbx.scale.setScalar(1.5 / size.y);
-
-        // 地面に立たせる
-        fbx.updateMatrixWorld(true);
-        const adj = new THREE.Box3().setFromObject(fbx);
-        fbx.position.y = -adj.min.y;
-
-        // まずモデルを表示（テクスチャは後から適用）
-        setScene(fbx);
-
-        // 高さベース・マルチテクスチャ適用
-        try {
-          const allMeshes: THREE.Mesh[] = [];
-          fbx.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-              allMeshes.push(child as THREE.Mesh);
-            }
-          });
-          console.log("[Model] Meshes found:", allMeshes.length);
-          for (const mesh of allMeshes) {
-            await applyHeightBasedTextures(mesh);
-          }
-          console.log("[Model] Textures applied");
-        } catch (e) {
-          console.error("[Model] Texture error:", e);
+    loader.load("/models/KissWithSkin.fbx", async (fbx) => {
+      fbx.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
+      });
 
-        // アニメーション適用
-        try {
-          mixer.current = new THREE.AnimationMixer(fbx);
-          const clip = await loadAnimationFromFBX("/models/standing_idol.fbx");
-          if (clip) {
-            console.log("[Model] Animation loaded:", clip.name, clip.duration.toFixed(2) + "s");
-            mixer.current.clipAction(clip).play();
-          }
-        } catch (e) {
-          console.error("[Model] Animation error:", e);
+      // スケール調整（1.5m目標）
+      const box = new THREE.Box3().setFromObject(fbx);
+      const size = box.getSize(new THREE.Vector3());
+      fbx.scale.setScalar(1.5 / size.y);
+
+      // 地面に立たせる
+      fbx.updateMatrixWorld(true);
+      const adj = new THREE.Box3().setFromObject(fbx);
+      fbx.position.y = -adj.min.y;
+
+      // まずモデルを表示（テクスチャは後から適用）
+      setScene(fbx);
+
+      // 高さベース・マルチテクスチャ適用
+      const allMeshes: THREE.Mesh[] = [];
+      fbx.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          allMeshes.push(child as THREE.Mesh);
         }
-      },
-      undefined,
-      (error) => console.error("[Model] FBX load error:", error),
-    );
+      });
+      for (const mesh of allMeshes) {
+        await applyHeightBasedTextures(mesh);
+      }
+
+      // アニメーション適用
+      mixer.current = new THREE.AnimationMixer(fbx);
+      const clip = await loadAnimationFromFBX("/models/standing_idol.fbx");
+      if (clip) {
+        mixer.current.clipAction(clip).play();
+      }
+    });
 
     return () => {
       mixer.current?.stopAllAction();
