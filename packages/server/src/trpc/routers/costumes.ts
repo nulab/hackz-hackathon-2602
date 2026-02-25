@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { equipCostumeInputSchema, costumeSchema } from "@hackz/shared";
+import { equipBuildInputSchema, costumeSchema } from "@hackz/shared";
 import { protectedProcedure, router } from "../trpc";
 
 export const costumesRouter = router({
@@ -8,7 +8,7 @@ export const costumesRouter = router({
     .query(async () => ({ costumes: [] })),
 
   equip: protectedProcedure
-    .input(equipCostumeInputSchema)
+    .input(equipBuildInputSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async () => ({ success: true })),
 });

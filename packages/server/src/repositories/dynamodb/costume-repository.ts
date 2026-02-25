@@ -1,4 +1,5 @@
-import { GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import type { Rarity } from "@hackz/shared";
 import { dynamodb } from "../../services/dynamodb";
 import type { Costume, CostumeRepository, Versioned } from "../types";
 
@@ -10,11 +11,12 @@ export const createDynamoDBCostumeRepository = (): CostumeRepository => ({
     return (Item as Versioned<Costume>) ?? null;
   },
 
-  async findByRarity(rarity) {
+  async findByRarity(rarity: Rarity) {
     const { Items } = await dynamodb.send(
-      new ScanCommand({
+      new QueryCommand({
         TableName: TABLE,
-        FilterExpression: "rarity = :rarity",
+        IndexName: "rarity-index",
+        KeyConditionExpression: "rarity = :rarity",
         ExpressionAttributeValues: { ":rarity": rarity },
       }),
     );

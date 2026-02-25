@@ -60,8 +60,8 @@ Bun 組み込みテストランナーを使用。
 
 `packages/shared/src/schemas.ts` に全 Zod スキーマを定義。型は `z.infer<>` で導出。
 
-- Domain models: `userSchema`, `costumeSchema`, `sessionSchema` 等
-- Procedure inputs: `nfcLoginInputSchema`, `equipCostumeInputSchema` 等
+- Domain models: `userSchema`, `costumeSchema`, `userCostumeSchema`, `costumeBuildSchema`, `sessionSchema` 等
+- Procedure inputs: `nfcLoginInputSchema`, `equipBuildInputSchema`, `createBuildInputSchema`, `updateBuildInputSchema` 等
 - SSE event types: `projectorEventSchema`, `sessionEventSchema`
 
 ### tRPC Router 構成
@@ -130,11 +130,13 @@ Socket.IO の代わりに tRPC SSE subscriptions を使用:
 
 ## DynamoDB Tables
 
-| テーブル | PK  | GSI    |
-| -------- | --- | ------ |
-| Users    | id  | nfcId  |
-| Sessions | id  | userId |
-| Costumes | id  | —      |
+| テーブル      | PK     | SK        | GSI                               |
+| ------------- | ------ | --------- | --------------------------------- |
+| Users         | id     | —         | nfcId-index (nfcId)               |
+| Costumes      | id     | —         | rarity-index (rarity)             |
+| UserCostumes  | userId | costumeId | —                                 |
+| CostumeBuilds | userId | buildId   | —                                 |
+| Sessions      | id     | —         | userId-index (userId + createdAt) |
 
 `docker compose up -d` で DynamoDB Local を起動（ポート 8787）し、`bun run db:init` でテーブル作成。
 

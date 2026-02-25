@@ -19,6 +19,7 @@ export const createDynamoDBSessionRepository = (): SessionRepository => ({
         IndexName: "userId-index",
         KeyConditionExpression: "userId = :userId",
         ExpressionAttributeValues: { ":userId": userId },
+        ScanIndexForward: false,
       }),
     );
     return (Items ?? []) as Versioned<Session>[];
@@ -44,14 +45,17 @@ export const createDynamoDBSessionRepository = (): SessionRepository => ({
           TableName: TABLE,
           Key: { id: session.id },
           UpdateExpression:
-            "SET #status = :status, costumeId = :costumeId, progress = :progress, videoUrl = :videoUrl, version = :nextVersion",
+            "SET #status = :status, buildId = :buildId, photoUrl = :photoUrl, progress = :progress, videoUrl = :videoUrl, score = :score, #rank = :rank, version = :nextVersion",
           ConditionExpression: "version = :currentVersion",
-          ExpressionAttributeNames: { "#status": "status" },
+          ExpressionAttributeNames: { "#status": "status", "#rank": "rank" },
           ExpressionAttributeValues: {
             ":status": session.status,
-            ":costumeId": session.costumeId,
+            ":buildId": session.buildId,
+            ":photoUrl": session.photoUrl,
             ":progress": session.progress,
             ":videoUrl": session.videoUrl ?? null,
+            ":score": session.score ?? null,
+            ":rank": session.rank ?? null,
             ":currentVersion": session.version,
             ":nextVersion": nextVersion,
           },

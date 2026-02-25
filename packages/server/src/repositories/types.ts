@@ -1,4 +1,4 @@
-import type { SessionStatus } from "@hackz/shared";
+import type { CostumeCategory, Rank, Rarity, SessionStatus } from "@hackz/shared";
 
 /** 全エンティティ共通: 楽観的ロック用バージョンフィールド */
 export type Versioned<T> = T & { version: number };
@@ -10,7 +10,8 @@ export type User = {
   nfcId: string;
   name: string;
   photoUrl?: string;
-  equippedCostumeId?: string;
+  equippedBuildId?: string;
+  totalScore: number;
   createdAt: string;
 };
 
@@ -22,15 +23,74 @@ export type UserRepository = {
   update(user: Versioned<User>): Promise<Versioned<User>>;
 };
 
+// ── Costume ──
+
+export type Costume = {
+  id: string;
+  name: string;
+  rarity: Rarity;
+  category: CostumeCategory;
+  imageUrl: string;
+  description: string;
+};
+
+export type CostumeRepository = {
+  findById(id: string): Promise<Versioned<Costume> | null>;
+  findByRarity(rarity: Rarity): Promise<Versioned<Costume>[]>;
+  findAll(): Promise<Versioned<Costume>[]>;
+  create(costume: Costume): Promise<Versioned<Costume>>;
+};
+
+// ── UserCostume ──
+
+export type UserCostume = {
+  userId: string;
+  costumeId: string;
+  acquiredAt: string;
+  count: number;
+};
+
+export type UserCostumeRepository = {
+  findByUserId(userId: string): Promise<UserCostume[]>;
+  find(userId: string, costumeId: string): Promise<UserCostume | null>;
+  /** ガチャで獲得: 新規なら作成、既所持なら count をインクリメント */
+  acquire(userId: string, costumeId: string): Promise<{ item: UserCostume; isNew: boolean }>;
+};
+
+// ── CostumeBuild ──
+
+export type CostumeBuild = {
+  userId: string;
+  buildId: string;
+  name: string;
+  topId?: string;
+  bottomId?: string;
+  accessoryId?: string;
+  hairId?: string;
+  isDefault: boolean;
+  createdAt: string;
+};
+
+export type CostumeBuildRepository = {
+  findByUserId(userId: string): Promise<Versioned<CostumeBuild>[]>;
+  find(userId: string, buildId: string): Promise<Versioned<CostumeBuild> | null>;
+  create(build: CostumeBuild): Promise<Versioned<CostumeBuild>>;
+  update(build: Versioned<CostumeBuild>): Promise<Versioned<CostumeBuild>>;
+  delete(userId: string, buildId: string): Promise<void>;
+};
+
 // ── Session ──
 
 export type Session = {
   id: string;
   userId: string;
   status: SessionStatus;
-  costumeId: string;
+  buildId: string;
+  photoUrl: string;
   progress: number;
   videoUrl?: string;
+  score?: number;
+  rank?: Rank;
   createdAt: string;
 };
 
@@ -39,23 +99,6 @@ export type SessionRepository = {
   findByUserId(userId: string): Promise<Versioned<Session>[]>;
   create(session: Session): Promise<Versioned<Session>>;
   update(session: Versioned<Session>): Promise<Versioned<Session>>;
-};
-
-// ── Costume ──
-
-export type Costume = {
-  id: string;
-  name: string;
-  rarity: string;
-  imageUrl: string;
-  description: string;
-};
-
-export type CostumeRepository = {
-  findById(id: string): Promise<Versioned<Costume> | null>;
-  findByRarity(rarity: string): Promise<Versioned<Costume>[]>;
-  findAll(): Promise<Versioned<Costume>[]>;
-  create(costume: Costume): Promise<Versioned<Costume>>;
 };
 
 // ── 楽観的ロック失敗エラー ──
