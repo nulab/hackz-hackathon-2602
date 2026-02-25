@@ -7,6 +7,7 @@ import { storage } from "../../../lib/storage";
 import { ITEMS } from "../../../lib/items";
 import type { ItemLayer } from "../../../lib/items";
 import { saveSelection } from "../../../lib/api";
+import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
 import { uiImages, itemImages } from "../../../assets/images";
 import styles from "./costumes.module.css";
 
@@ -79,11 +80,7 @@ const CostumesPage = () => {
             {photo ? (
               <img src={photo} alt="撮影した写真" className={styles.photoPreview} />
             ) : (
-              <img
-                src={uiImages.defaultChar}
-                alt="デフォルト画像"
-                className={styles.characterPlaceholder}
-              />
+              <DancingModelCanvas />
             )}
             {selectedItems.length > 0 && (
               <div className={styles.characterBadges}>
