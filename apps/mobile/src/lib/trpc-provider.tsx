@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, splitLink, unstable_httpSubscriptionLink } from "@trpc/client";
 import { trpc } from "./trpc";
 
-const API_URL = "http://localhost:3000/trpc";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/trpc";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
