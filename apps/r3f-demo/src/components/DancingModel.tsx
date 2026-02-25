@@ -37,8 +37,8 @@ export const DancingModel = () => {
         // テクスチャ適用（全パーツ共通のUVリマップ＋テクスチャ貼り付け）
         attachTextureToGroup(fbx, "head", "/models/free_face.png", "#2a1a0a");
         attachTextureToGroup(fbx, "tops", "/models/sozai_tops.png", "#e8a0b8");
-        attachBottomsTexture(fbx, "/models/sozai_bottoms_vivid.png");
-        // attachTextureToGroup(fbx, "shoes", "/models/sozai_shoes.png");
+        attachClothingTexture(fbx, "bottoms", "/models/sozai_bottoms_vivid.png", [90, 110, 140]);
+        attachTextureToGroup(fbx, "shoes", "/models/sozai_shoes.png", "#3c3c3c");
 
         // ダンスアニメーション
         mixer.current = new THREE.AnimationMixer(fbx);
@@ -135,8 +135,10 @@ const attachTextureToGroup = (
   const index = mesh.geometry.index;
   const totalVerts = matchingGroups.reduce((sum, g) => sum + g.count, 0);
 
-  if (materialName === "head") {
-    // headは従来のUVリマップ（最初のグループのみ、顔写真にフィット）
+  const useUVRemap = materialName === "head" || materialName === "shoes";
+
+  if (useUVRemap) {
+    // UVリマップ（既存UVを0-1に正規化して画像を貼り付け）
     for (const g of matchingGroups) {
       let minU = Infinity,
         maxU = -Infinity,
@@ -157,16 +159,18 @@ const attachTextureToGroup = (
       }
     }
 
-    // 前面/後面フラグ
-    const normals = mesh.geometry.attributes.normal;
-    const faceFlag = new Float32Array(normals.count);
-    for (const g of matchingGroups) {
-      for (let i = g.start; i < g.start + g.count; i++) {
-        const vi = index ? index.getX(i) : i;
-        faceFlag[vi] = normals.getY(vi) < 0 ? 1.0 : 0.0;
+    // headの前面/後面フラグ
+    if (materialName === "head") {
+      const normals = mesh.geometry.attributes.normal;
+      const faceFlag = new Float32Array(normals.count);
+      for (const g of matchingGroups) {
+        for (let i = g.start; i < g.start + g.count; i++) {
+          const vi = index ? index.getX(i) : i;
+          faceFlag[vi] = normals.getY(vi) < 0 ? 1.0 : 0.0;
+        }
       }
+      mesh.geometry.setAttribute("faceFlag", new THREE.BufferAttribute(faceFlag, 1));
     }
-    mesh.geometry.setAttribute("faceFlag", new THREE.BufferAttribute(faceFlag, 1));
   } else {
     // head以外: 頂点座標からUVを生成（正面プロジェクション）
     // モデル空間: X=左右, Y=前後, Z=上下（Blender Z-up）
@@ -256,10 +260,12 @@ const attachTextureToGroup = (
     ctx.drawImage(img, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
 
     const canvasTex = new THREE.CanvasTexture(canvas);
+    canvasTex.colorSpace = THREE.SRGBColorSpace;
 
     const mat = new THREE.MeshBasicMaterial({
       map: canvasTex,
       side: THREE.DoubleSide,
+      toneMapped: false,
     });
 
     // headの場合: 前面=テクスチャ、後面=髪色のシェーダー
@@ -308,12 +314,13 @@ const attachTextureToGroup = (
   });
 };
 
-const attachBottomsTexture = (model: THREE.Object3D, imageUrl: string) => {
-  const materialName = "bottoms";
-  // デニムの基本色（透明部分の埋め色）
-  const baseR = 90,
-    baseG = 110,
-    baseB = 140;
+const attachClothingTexture = (
+  model: THREE.Object3D,
+  materialName: string,
+  imageUrl: string,
+  baseRGB: [number, number, number],
+) => {
+  const [baseR, baseG, baseB] = baseRGB;
 
   let targetMesh: THREE.SkinnedMesh | null = null;
   model.traverse((child) => {
