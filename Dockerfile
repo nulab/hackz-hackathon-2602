@@ -1,6 +1,7 @@
 # ============================================================
-# Hono + tRPC サーバー (App Runner 用)
-# Bun ランタイム、モノレポのワークスペース依存を解決
+# Hono + tRPC サーバー (ECS Fargate 用)
+# Node.js ランタイム + tsx（WebSocket の ws パッケージ互換性のため）
+# deps stage は Bun で高速インストール、runner は Node.js で実行
 # ============================================================
 
 FROM oven/bun:1.3.9-slim AS deps
@@ -18,7 +19,7 @@ COPY packages/tsconfig/package.json ./packages/tsconfig/
 RUN bun install --ignore-scripts
 
 # ============================================================
-FROM oven/bun:1.3.9-slim AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 
@@ -29,13 +30,13 @@ COPY packages/tsconfig ./packages/tsconfig
 COPY package.json bunfig.toml ./
 
 # インストール済み依存をコピー（root + ワークスペース）
-# ソースコードの後にコピーすることで .dockerignore で除外した
-# ホストの node_modules ではなく deps stage の正しい依存を使用
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/server/node_modules ./packages/server/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 
+# tsx で TypeScript を直接実行
+RUN npm install -g tsx
+
 EXPOSE 3000
 
-# Bun は TypeScript をそのまま実行できるためビルド不要
-CMD ["bun", "run", "packages/server/src/index.ts"]
+CMD ["tsx", "packages/server/src/index.ts"]
