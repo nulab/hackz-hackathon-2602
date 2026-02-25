@@ -13,57 +13,58 @@ export const useAdminRoomConnection = () => {
   const heartbeatMutation = trpc.room.heartbeat.useMutation();
   const disconnectMutation = trpc.room.disconnect.useMutation();
 
-  const connect = useCallback(
-    async (targetRoomId: string) => {
-      setState("connecting");
-      try {
-        await joinMutation.mutateAsync({ roomId: targetRoomId });
-        roomIdRef.current = targetRoomId;
-        setRoomId(targetRoomId);
-        setState("connected");
-      } catch {
-        setState("disconnected");
-      }
-    },
-    [joinMutation],
-  );
+  // Refs for mutation methods to avoid re-render loops in dependency arrays
+  const joinRef = useRef(joinMutation.mutateAsync);
+  const sendRef = useRef(sendMutation.mutate);
+  const heartbeatRef = useRef(heartbeatMutation.mutateAsync);
+  const disconnectRef = useRef(disconnectMutation.mutate);
+  joinRef.current = joinMutation.mutateAsync;
+  sendRef.current = sendMutation.mutate;
+  heartbeatRef.current = heartbeatMutation.mutateAsync;
+  disconnectRef.current = disconnectMutation.mutate;
+
+  const connect = useCallback(async (targetRoomId: string) => {
+    setState("connecting");
+    try {
+      await joinRef.current({ roomId: targetRoomId });
+      roomIdRef.current = targetRoomId;
+      setRoomId(targetRoomId);
+      setState("connected");
+    } catch {
+      setState("disconnected");
+    }
+  }, []);
 
   const disconnect = useCallback(() => {
     if (roomIdRef.current) {
-      disconnectMutation.mutate({ roomId: roomIdRef.current, role: "admin" });
+      disconnectRef.current({ roomId: roomIdRef.current, role: "admin" });
     }
     roomIdRef.current = null;
     setRoomId(null);
     setState("disconnected");
-  }, [disconnectMutation]);
+  }, []);
 
-  const sendNfcScan = useCallback(
-    (nfcId: string) => {
-      if (!roomIdRef.current) {
-        return;
-      }
-      sendMutation.mutate({
-        roomId: roomIdRef.current,
-        channel: "upstream",
-        message: { type: "NFC_SCANNED", payload: { nfcId } },
-      });
-    },
-    [sendMutation],
-  );
+  const sendNfcScan = useCallback((nfcId: string) => {
+    if (!roomIdRef.current) {
+      return;
+    }
+    sendRef.current({
+      roomId: roomIdRef.current,
+      channel: "upstream",
+      message: { type: "NFC_SCANNED", payload: { nfcId } },
+    });
+  }, []);
 
-  const sendQrScan = useCallback(
-    (data: string) => {
-      if (!roomIdRef.current) {
-        return;
-      }
-      sendMutation.mutate({
-        roomId: roomIdRef.current,
-        channel: "upstream",
-        message: { type: "QR_SCANNED", payload: { data } },
-      });
-    },
-    [sendMutation],
-  );
+  const sendQrScan = useCallback((data: string) => {
+    if (!roomIdRef.current) {
+      return;
+    }
+    sendRef.current({
+      roomId: roomIdRef.current,
+      channel: "upstream",
+      message: { type: "QR_SCANNED", payload: { data } },
+    });
+  }, []);
 
   // Heartbeat every 5 seconds
   useEffect(() => {
@@ -74,7 +75,7 @@ export const useAdminRoomConnection = () => {
 
     const interval = setInterval(async () => {
       try {
-        await heartbeatMutation.mutateAsync({ roomId: currentRoomId, role: "admin" });
+        await heartbeatRef.current({ roomId: currentRoomId, role: "admin" });
       } catch {
         setState("disconnected");
         roomIdRef.current = null;
@@ -82,16 +83,16 @@ export const useAdminRoomConnection = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [roomId, heartbeatMutation]);
+  }, [roomId]);
 
   // Cleanup on unmount
   useEffect(
     () => () => {
       if (roomIdRef.current) {
-        disconnectMutation.mutate({ roomId: roomIdRef.current, role: "admin" });
+        disconnectRef.current({ roomId: roomIdRef.current, role: "admin" });
       }
     },
-    [disconnectMutation],
+    [],
   );
 
   return { state, roomId, connect, disconnect, sendNfcScan, sendQrScan };
