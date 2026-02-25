@@ -141,25 +141,26 @@ resource "aws_route_table_association" "private" {
 # セキュリティグループ
 # ----------------------------------------------------------
 
-# ALB: インターネットから HTTP(80) / HTTPS(443) を許可
+# ALB: VPC 内から HTTP(80) / HTTPS(443) を許可（CloudFront VPC Origin 経由）
+# インターネットからの直接アクセスは不可
 resource "aws_security_group" "alb" {
   name   = "${var.app_name}-alb-sg"
   vpc_id = aws_vpc.main.id
 
   ingress {
-    description = "HTTP from internet"
+    description = "HTTP from VPC (CloudFront VPC Origin)"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   ingress {
-    description = "HTTPS from internet"
+    description = "HTTPS from VPC (CloudFront VPC Origin)"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   egress {
