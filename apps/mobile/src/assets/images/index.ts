@@ -2,7 +2,7 @@
 import logo from "./logo.png";
 import button from "./button.png";
 import magiccircle from "./magiccircle.png";
-import defaultChar from "./default.png";
+
 import heart from "./heart.png";
 import star from "./star.png";
 import cardBack from "./card_back.png";
@@ -48,7 +48,7 @@ export const uiImages = {
   logo,
   button,
   magiccircle,
-  defaultChar,
+
   heart,
   star,
   cardBack,

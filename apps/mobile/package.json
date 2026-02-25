@@ -11,12 +11,15 @@
   "dependencies": {
     "@hackz/server": "workspace:*",
     "@hackz/shared": "workspace:*",
+    "@react-three/drei": "10.0.6",
+    "@react-three/fiber": "9.1.2",
     "@tanstack/react-query": "5.90.21",
     "@tanstack/react-router": "^1.114.0",
     "@trpc/client": "11.10.0",
     "@trpc/react-query": "11.10.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "three": "0.173.0"
   },
   "devDependencies": {
     "@hackz/tsconfig": "workspace:*",
@@ -24,6 +27,7 @@
     "@tanstack/router-plugin": "^1.114.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "0.173.0",
     "@vitejs/plugin-react": "^4.3.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",

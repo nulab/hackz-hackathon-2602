@@ -5,6 +5,7 @@ import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 export default defineConfig({
   plugins: [TanStackRouterVite(), react(), tailwindcss()],
+  assetsInclude: ["**/*.fbx"],
   server: {
     port: 5173,
   },
