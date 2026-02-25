@@ -30,9 +30,6 @@ export const markAdminConnected = (roomId: string): boolean => {
   if (!room) {
     return false;
   }
-  if (room.adminConnected) {
-    return false;
-  } // 1:1 制限
   room.adminConnected = true;
   return true;
 };
