@@ -22,7 +22,7 @@ export const useAdminConnection = () => {
       enabled: !!roomId && state !== "connected",
       onData: async (event) => {
         const conn = connectionRef.current;
-        if (!conn) {
+        if (!conn || !roomId) {
           return;
         }
 
@@ -31,14 +31,14 @@ export const useAdminConnection = () => {
             const answerPayload = await conn.handleOffer(event.payload);
             conn.onIceCandidate((candidate) => {
               sendSignalMutation.mutate({
-                roomId: roomId!,
+                roomId,
                 type: "ice-candidate",
                 payload: candidate,
                 from: "admin",
               });
             });
             sendSignalMutation.mutate({
-              roomId: roomId!,
+              roomId,
               type: "answer",
               payload: answerPayload,
               from: "admin",

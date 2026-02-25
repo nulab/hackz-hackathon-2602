@@ -23,7 +23,7 @@ export const useProjectorConnection = () => {
       enabled: !!roomId && state !== "connected",
       onData: async (event) => {
         const conn = connectionRef.current;
-        if (!conn) {
+        if (!conn || !roomId) {
           return;
         }
 
@@ -32,14 +32,14 @@ export const useProjectorConnection = () => {
             const offerPayload = await conn.createOffer();
             conn.onIceCandidate((candidate) => {
               sendSignalMutation.mutate({
-                roomId: roomId!,
+                roomId,
                 type: "ice-candidate",
                 payload: candidate,
                 from: "projector",
               });
             });
             sendSignalMutation.mutate({
-              roomId: roomId!,
+              roomId,
               type: "offer",
               payload: offerPayload,
               from: "projector",

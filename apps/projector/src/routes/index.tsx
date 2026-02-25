@@ -1,17 +1,48 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
 import type { UpstreamMessage } from "@hackz/shared";
 import { useProjectorConnection } from "../webrtc/useProjectorConnection";
+import type { ProjectorConnectionState } from "../webrtc/ProjectorConnection";
+
+const getStatusColor = (state: ProjectorConnectionState): string => {
+  switch (state) {
+    case "connected":
+      return "bg-green-500";
+    case "connecting":
+      return "bg-yellow-500 animate-pulse";
+    case "waiting":
+      return "bg-blue-500 animate-pulse";
+    default:
+      return "bg-red-500";
+  }
+};
+
+const getStatusText = (state: ProjectorConnectionState): string => {
+  switch (state) {
+    case "connected":
+      return "Admin 接続中";
+    case "connecting":
+      return "接続中...";
+    case "waiting":
+      return "Admin 待ち";
+    default:
+      return "未接続";
+  }
+};
 
 const ProjectorPage = () => {
   const { state, roomId, open, close, disconnectAdmin, onMessage } = useProjectorConnection();
+  const openRef = useRef(open);
+  const closeRef = useRef(close);
+  openRef.current = open;
+  closeRef.current = close;
 
   // 起動時にルームを作成
   useEffect(() => {
-    open();
+    openRef.current();
     return () => {
-      close();
+      closeRef.current();
     };
   }, []);
 
@@ -19,11 +50,9 @@ const ProjectorPage = () => {
   const handleMessage = useCallback((msg: UpstreamMessage) => {
     switch (msg.type) {
       case "NFC_SCANNED":
-        console.log("NFC scanned:", msg.nfcId);
         // TODO: tRPC で auth.nfcLogin を呼んで結果を Admin に返す
         break;
       case "QR_SCANNED":
-        console.log("QR scanned:", msg.data);
         // TODO: QR データを処理して結果を Admin に返す
         break;
     }
@@ -37,26 +66,8 @@ const ProjectorPage = () => {
     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
       {/* 接続ステータス */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <span
-          className={`inline-block w-3 h-3 rounded-full ${
-            state === "connected"
-              ? "bg-green-500"
-              : state === "connecting"
-                ? "bg-yellow-500 animate-pulse"
-                : state === "waiting"
-                  ? "bg-blue-500 animate-pulse"
-                  : "bg-red-500"
-          }`}
-        />
-        <span className="text-sm text-gray-400">
-          {state === "connected"
-            ? "Admin 接続中"
-            : state === "connecting"
-              ? "接続中..."
-              : state === "waiting"
-                ? "Admin 待ち"
-                : "未接続"}
-        </span>
+        <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(state)}`} />
+        <span className="text-sm text-gray-400">{getStatusText(state)}</span>
         {state === "connected" && (
           <button
             type="button"
