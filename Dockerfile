@@ -22,14 +22,18 @@ FROM oven/bun:1.3.9-slim AS runner
 
 WORKDIR /app
 
-# インストール済み依存をコピー
-COPY --from=deps /app/node_modules ./node_modules
-
 # サーバー実行に必要なソースコードをコピー
 COPY packages/server  ./packages/server
 COPY packages/shared  ./packages/shared
 COPY packages/tsconfig ./packages/tsconfig
 COPY package.json bunfig.toml ./
+
+# インストール済み依存をコピー（root + ワークスペース）
+# ソースコードの後にコピーすることで .dockerignore で除外した
+# ホストの node_modules ではなく deps stage の正しい依存を使用
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/server/node_modules ./packages/server/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 
 EXPOSE 3000
 
