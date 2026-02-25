@@ -300,10 +300,7 @@ export const DancingModel = () => {
         // スケール調整（1.5m目標）
         const box = new THREE.Box3().setFromObject(fbx);
         const size = box.getSize(new THREE.Vector3());
-        console.log("[Model] Size:", size.x.toFixed(1), size.y.toFixed(1), size.z.toFixed(1));
-        if (size.y > 2) {
-          fbx.scale.setScalar(1.5 / size.y);
-        }
+        fbx.scale.setScalar(1.5 / size.y);
 
         // 地面に立たせる
         fbx.updateMatrixWorld(true);

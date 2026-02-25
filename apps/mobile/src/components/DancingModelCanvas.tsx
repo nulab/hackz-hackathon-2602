@@ -4,7 +4,7 @@ import { DancingModel } from "./DancingModel";
 export const DancingModelCanvas = () => (
   <div style={{ width: "100%", aspectRatio: "1", position: "relative", zIndex: 1 }}>
     <Canvas
-      camera={{ position: [0, 0.75, 2.0], fov: 50 }}
+      camera={{ position: [0, 0.75, 1.8], fov: 50 }}
       onCreated={({ camera }) => camera.lookAt(0, 0.75, 0)}
     >
       <ambientLight intensity={0.6} />
