@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import type { UpstreamMessage } from "@hackz/shared";
 import { useProjectorConnection } from "../webrtc/useProjectorConnection";
 import type { ProjectorConnectionState } from "../webrtc/ProjectorConnection";
+import { trpc } from "../lib/trpc";
 
 const getStatusColor = (state: ProjectorConnectionState): string => {
   switch (state) {
@@ -32,11 +33,13 @@ const getStatusText = (state: ProjectorConnectionState): string => {
 };
 
 const ProjectorPage = () => {
-  const { state, roomId, open, close, disconnectAdmin, onMessage } = useProjectorConnection();
+  const { state, roomId, open, close, disconnectAdmin, onMessage, send } = useProjectorConnection();
   const openRef = useRef(open);
   const closeRef = useRef(close);
   openRef.current = open;
   closeRef.current = close;
+
+  const nfcLoginMutation = trpc.auth.nfcLogin.useMutation();
 
   // 起動時にルームを作成
   useEffect(() => {
@@ -47,16 +50,44 @@ const ProjectorPage = () => {
   }, []);
 
   // Admin からのメッセージを処理
-  const handleMessage = useCallback((msg: UpstreamMessage) => {
-    switch (msg.type) {
-      case "NFC_SCANNED":
-        // TODO: tRPC で auth.nfcLogin を呼んで結果を Admin に返す
-        break;
-      case "QR_SCANNED":
-        // TODO: QR データを処理して結果を Admin に返す
-        break;
-    }
-  }, []);
+  const handleMessage = useCallback(
+    (msg: UpstreamMessage) => {
+      switch (msg.type) {
+        case "NFC_SCANNED":
+          nfcLoginMutation.mutate(
+            { nfcId: msg.nfcId },
+            {
+              onSuccess: (data) => {
+                send({
+                  type: "SCAN_RESULT",
+                  success: true,
+                  scanType: "nfc",
+                  message: `${data.user.name} がログインしました`,
+                });
+              },
+              onError: (err) => {
+                send({
+                  type: "SCAN_RESULT",
+                  success: false,
+                  scanType: "nfc",
+                  message: err.message,
+                });
+              },
+            },
+          );
+          break;
+        case "QR_SCANNED":
+          send({
+            type: "SCAN_RESULT",
+            success: true,
+            scanType: "qr",
+            message: `QR データ受信: ${msg.data}`,
+          });
+          break;
+      }
+    },
+    [nfcLoginMutation, send],
+  );
 
   useEffect(() => {
     onMessage(handleMessage);

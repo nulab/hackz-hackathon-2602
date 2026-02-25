@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { UpstreamMessage } from "@hackz/shared";
+import type { DownstreamMessage, UpstreamMessage } from "@hackz/shared";
 import { ProjectorConnection } from "./ProjectorConnection";
 import type { ProjectorConnectionState } from "./ProjectorConnection";
 import { trpc } from "../lib/trpc";
@@ -103,5 +103,9 @@ export const useProjectorConnection = () => {
     [],
   );
 
-  return { state, roomId, open, close, disconnectAdmin, onMessage };
+  const send = useCallback((msg: DownstreamMessage) => {
+    connectionRef.current?.send(msg);
+  }, []);
+
+  return { state, roomId, open, close, disconnectAdmin, onMessage, send };
 };

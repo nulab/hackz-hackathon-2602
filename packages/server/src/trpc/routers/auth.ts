@@ -2,6 +2,9 @@ import { z } from "zod";
 import { nfcLoginInputSchema, userSchema } from "@hackz/shared";
 import { publicProcedure, router } from "../trpc";
 import { signToken } from "../../lib/jwt";
+import { createDynamoDBUserRepository } from "../../repositories/dynamodb/user-repository";
+
+const userRepo = createDynamoDBUserRepository();
 
 export const authRouter = router({
   nfcLogin: publicProcedure
@@ -10,16 +13,28 @@ export const authRouter = router({
     .mutation(async ({ input }) => {
       const { nfcId } = input;
 
-      // TODO: Look up or create user by NFC ID in DynamoDB
-      const userId = nfcId;
-      const token = await signToken(userId);
+      let user = await userRepo.findByNfcId(nfcId);
+      if (!user) {
+        user = await userRepo.create({
+          id: crypto.randomUUID(),
+          nfcId,
+          name: `User-${nfcId.slice(0, 6)}`,
+          totalScore: 0,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      const token = await signToken(user.id);
 
       return {
         token,
         user: {
-          id: userId,
-          name: `User-${userId.slice(0, 6)}`,
-          createdAt: new Date().toISOString(),
+          id: user.id,
+          name: user.name,
+          photoUrl: user.photoUrl,
+          equippedBuildId: user.equippedBuildId,
+          totalScore: user.totalScore,
+          createdAt: user.createdAt,
         },
       };
     }),

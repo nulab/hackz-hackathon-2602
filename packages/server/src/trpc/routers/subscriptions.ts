@@ -4,6 +4,9 @@ import { nfcScanInputSchema } from "@hackz/shared";
 import type { ProjectorEvent, SessionEvent } from "@hackz/shared";
 import { publicProcedure, protectedProcedure, router } from "../trpc";
 import { ee, emitProjectorEvent } from "../ee";
+import { createDynamoDBUserRepository } from "../../repositories/dynamodb/user-repository";
+
+const userRepo = createDynamoDBUserRepository();
 
 export const subscriptionRouter = router({
   // Projector room: NFC scans + gacha results
@@ -35,11 +38,12 @@ export const subscriptionRouter = router({
   nfcScan: protectedProcedure
     .input(nfcScanInputSchema)
     .output(z.object({ success: z.boolean() }))
-    .mutation(({ input }) => {
+    .mutation(async ({ input }) => {
+      const user = await userRepo.findByNfcId(input.nfcId);
       emitProjectorEvent({
         type: "nfc:scanned",
-        userId: input.nfcId,
-        userName: `User-${input.nfcId.slice(0, 6)}`,
+        userId: user?.id ?? input.nfcId,
+        userName: user?.name ?? `User-${input.nfcId.slice(0, 6)}`,
       });
       return { success: true };
     }),
