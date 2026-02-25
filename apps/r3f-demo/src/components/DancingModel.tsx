@@ -449,6 +449,78 @@ export const DancingModel = () => {
           allClips.push(flair);
         }
 
+        // 8. Flying Kick
+        const flyingKick = await loadAnimationFromFBX("/models/Flying Kick.fbx");
+        if (flyingKick) {
+          flyingKick.name = "FlyingKick";
+          allClips.push(flyingKick);
+        }
+
+        // 9. Livershot Knockdown
+        const livershot = await loadAnimationFromFBX("/models/Livershot Knockdown.fbx");
+        if (livershot) {
+          livershot.name = "LivershotKnockdown";
+          allClips.push(livershot);
+        }
+
+        // 10. Ninja Idle
+        const ninjaIdle = await loadAnimationFromFBX("/models/Ninja Idle.fbx");
+        if (ninjaIdle) {
+          ninjaIdle.name = "NinjaIdle";
+          allClips.push(ninjaIdle);
+        }
+
+        // 11. Run Backward
+        const runBackward = await loadAnimationFromFBX("/models/Run Backward.fbx");
+        if (runBackward) {
+          runBackward.name = "RunBackward";
+          allClips.push(runBackward);
+        }
+
+        // 12. Running Jump
+        const runningJump = await loadAnimationFromFBX("/models/Running Jump.fbx");
+        if (runningJump) {
+          runningJump.name = "RunningJump";
+          allClips.push(runningJump);
+        }
+
+        // 13. Shuffling
+        const shuffling = await loadAnimationFromFBX("/models/Shuffling.fbx");
+        if (shuffling) {
+          shuffling.name = "Shuffling";
+          allClips.push(shuffling);
+        }
+
+        // 14. Standing Death Left
+        const standingDeath = await loadAnimationFromFBX("/models/Standing Death Left 01.fbx");
+        if (standingDeath) {
+          standingDeath.name = "StandingDeathLeft";
+          allClips.push(standingDeath);
+        }
+
+        // 15. Standing Torch Melee Attack
+        const torchAttack = await loadAnimationFromFBX(
+          "/models/Standing Torch Melee Attack 01.fbx",
+        );
+        if (torchAttack) {
+          torchAttack.name = "TorchMeleeAttack";
+          allClips.push(torchAttack);
+        }
+
+        // 16. Strike Forward Jog
+        const strikeJog = await loadAnimationFromFBX("/models/Strike Foward Jog.fbx");
+        if (strikeJog) {
+          strikeJog.name = "StrikeForwardJog";
+          allClips.push(strikeJog);
+        }
+
+        // 17. Wave Hip Hop Dance
+        const waveHipHop = await loadAnimationFromFBX("/models/Wave Hip Hop Dance.fbx");
+        if (waveHipHop) {
+          waveHipHop.name = "WaveHipHopDance";
+          allClips.push(waveHipHop);
+        }
+
         clips.current = allClips;
         console.log(
           `[Model] ${allClips.length} clips:`,
