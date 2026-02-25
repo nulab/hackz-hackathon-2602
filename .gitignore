@@ -23,9 +23,6 @@ packages/api-client/generated/
 .DS_Store
 Thumbs.db
 
-# Bun
-bun.lock
-
 # Turbo
 .turbo
 

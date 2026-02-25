@@ -8,7 +8,7 @@ FROM oven/bun:1.3.9-slim AS deps
 WORKDIR /app
 
 # ワークスペース設定と依存関係のマニフェストをコピー
-COPY bun.lockb bunfig.toml turbo.json ./
+COPY bun.lock bunfig.toml turbo.json ./
 COPY package.json ./
 COPY packages/server/package.json  ./packages/server/
 COPY packages/shared/package.json  ./packages/shared/
