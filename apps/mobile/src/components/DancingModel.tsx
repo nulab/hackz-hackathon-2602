@@ -35,7 +35,7 @@ export function DancingModel() {
         fbx.position.y = -adjustedBox.min.y;
 
         // 顔テクスチャを頭メッシュに直接マッピング
-        attachFaceTextureToMesh(fbx, "/models/free_face.png");
+        attachFaceTextureToMesh(fbx, "https://picsum.photos/512");
 
         // ダンスアニメーション
         mixer.current = new THREE.AnimationMixer(fbx);
