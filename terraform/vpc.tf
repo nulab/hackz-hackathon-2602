@@ -55,15 +55,7 @@ resource "aws_subnet" "public" {
 # ----------------------------------------------------------
 # プライベートサブネット（ECS 配置用）
 # 10.0.2.0/24 (AZ2) — NAT Gateway 経由でインターネットへ
-#
-# 元々 public[1] (10.0.2.0/24) だったサブネットを private に移行。
-# CIDR 変更による destroy を回避するため moved ブロックで state を移動。
 # ----------------------------------------------------------
-moved {
-  from = aws_subnet.public[1]
-  to   = aws_subnet.private
-}
-
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.2.0/24"
