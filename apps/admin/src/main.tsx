@@ -4,7 +4,10 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import "./index.css";
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  basepath: "/hackz-hackathon-2602/admin",
+});
 
 declare module "@tanstack/react-router" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- declaration merging requires interface
