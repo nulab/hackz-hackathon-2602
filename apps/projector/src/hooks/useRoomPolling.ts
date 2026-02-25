@@ -1,18 +1,12 @@
 import { useEffect, useRef } from "react";
+import type { RoomMessage } from "@hackz/shared";
 import { trpc } from "../lib/trpc";
-
-type Message = {
-  id: number;
-  type: string;
-  payload: unknown;
-  createdAt: number;
-};
 
 export const useRoomPolling = (
   roomId: string | null,
   channel: string,
   intervalMs: number,
-  onMessages: (messages: Message[]) => void,
+  onMessages: (messages: RoomMessage[]) => void,
 ) => {
   const cursorRef = useRef(0);
   const onMessagesRef = useRef(onMessages);
@@ -31,6 +25,6 @@ export const useRoomPolling = (
       return;
     }
     cursorRef.current = data.lastId;
-    onMessagesRef.current(data.messages);
+    onMessagesRef.current(data.messages as RoomMessage[]);
   }, [data]);
 };

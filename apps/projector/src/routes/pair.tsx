@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
+import type { RoomMessage } from "@hackz/shared";
 import { useRoomConnection } from "../hooks/useRoomConnection";
 import type { RoomConnectionState } from "../hooks/useRoomConnection";
 import { useRoomPolling } from "../hooks/useRoomPolling";
@@ -62,39 +63,36 @@ const PairPage = () => {
     : null;
 
   // Admin からのメッセージ
-  const handleMessages = useCallback(
-    (messages: { id: number; type: string; payload: unknown; createdAt: number }[]) => {
-      for (const msg of messages) {
-        switch (msg.type) {
-          case "NFC_SCANNED":
-            setScans((prev) =>
-              [
-                {
-                  type: "NFC" as const,
-                  data: (msg.payload as { nfcId: string }).nfcId,
-                  time: new Date(),
-                },
-                ...prev,
-              ].slice(0, 50),
-            );
-            break;
-          case "QR_SCANNED":
-            setScans((prev) =>
-              [
-                {
-                  type: "QR" as const,
-                  data: (msg.payload as { data: string }).data,
-                  time: new Date(),
-                },
-                ...prev,
-              ].slice(0, 50),
-            );
-            break;
-        }
+  const handleMessages = useCallback((messages: RoomMessage[]) => {
+    for (const msg of messages) {
+      switch (msg.type) {
+        case "NFC_SCANNED":
+          setScans((prev) =>
+            [
+              {
+                type: "NFC" as const,
+                data: (msg.payload as { nfcId: string }).nfcId,
+                time: new Date(),
+              },
+              ...prev,
+            ].slice(0, 50),
+          );
+          break;
+        case "QR_SCANNED":
+          setScans((prev) =>
+            [
+              {
+                type: "QR" as const,
+                data: (msg.payload as { data: string }).data,
+                time: new Date(),
+              },
+              ...prev,
+            ].slice(0, 50),
+          );
+          break;
       }
-    },
-    [],
-  );
+    }
+  }, []);
 
   useRoomPolling(roomId, "upstream", 1000, handleMessages);
 

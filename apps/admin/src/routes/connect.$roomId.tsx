@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import type { RoomMessage } from "@hackz/shared";
 import { useAdminRoomConnection } from "../hooks/useAdminRoomConnection";
 import type { AdminConnectionState } from "../hooks/useAdminRoomConnection";
 import { useRoomPolling } from "../hooks/useRoomPolling";
@@ -68,25 +69,22 @@ const ConnectPage = () => {
   }, [lastRead, sendNfcScan]);
 
   // Projector からのダウンストリームメッセージをポーリング
-  const handleDownstreamMessages = useCallback(
-    (messages: { id: number; type: string; payload: unknown; createdAt: number }[]) => {
-      for (const msg of messages) {
-        if (msg.type === "SCAN_RESULT") {
-          const payload = msg.payload as { success: boolean; message?: string };
-          setFeedback({
-            success: payload.success,
-            message: payload.message ?? (payload.success ? "成功" : "失敗"),
-          });
-          setTimeout(() => setFeedback(null), 3000);
-        }
-        if (msg.type === "DISCONNECT") {
-          const payload = msg.payload as { reason: string };
-          setFeedback({ success: false, message: `切断: ${payload.reason}` });
-        }
+  const handleDownstreamMessages = useCallback((messages: RoomMessage[]) => {
+    for (const msg of messages) {
+      if (msg.type === "SCAN_RESULT") {
+        const payload = msg.payload as { success: boolean; message?: string };
+        setFeedback({
+          success: payload.success,
+          message: payload.message ?? (payload.success ? "成功" : "失敗"),
+        });
+        setTimeout(() => setFeedback(null), 3000);
       }
-    },
-    [],
-  );
+      if (msg.type === "DISCONNECT") {
+        const payload = msg.payload as { reason: string };
+        setFeedback({ success: false, message: `切断: ${payload.reason}` });
+      }
+    }
+  }, []);
 
   useRoomPolling(
     state === "connected" ? roomId : null,

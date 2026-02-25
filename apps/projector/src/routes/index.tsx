@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
+import type { RoomMessage } from "@hackz/shared";
 import { useRoomConnection } from "../hooks/useRoomConnection";
 import type { RoomConnectionState } from "../hooks/useRoomConnection";
 import { useRoomPolling } from "../hooks/useRoomPolling";
@@ -43,21 +44,18 @@ const ProjectorPage = () => {
     };
   }, []);
 
-  const handleMessages = useCallback(
-    (messages: { id: number; type: string; payload: unknown; createdAt: number }[]) => {
-      for (const msg of messages) {
-        switch (msg.type) {
-          case "NFC_SCANNED":
-            // TODO: tRPC で auth.nfcLogin を呼んで結果を Admin に返す
-            break;
-          case "QR_SCANNED":
-            // TODO: QR データを処理して結果を Admin に返す
-            break;
-        }
+  const handleMessages = useCallback((messages: RoomMessage[]) => {
+    for (const msg of messages) {
+      switch (msg.type) {
+        case "NFC_SCANNED":
+          // TODO: tRPC で auth.nfcLogin を呼んで結果を Admin に返す
+          break;
+        case "QR_SCANNED":
+          // TODO: QR データを処理して結果を Admin に返す
+          break;
       }
-    },
-    [],
-  );
+    }
+  }, []);
 
   useRoomPolling(roomId, "upstream", 1000, handleMessages);
 
