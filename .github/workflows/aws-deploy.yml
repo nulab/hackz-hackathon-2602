@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-infra
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -40,6 +44,13 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: terraform/.terraform/providers
+          key: terraform-providers-${{ hashFiles('terraform/.terraform.lock.hcl') }}
+          restore-keys: terraform-providers-
 
       - name: Terraform Init
         run: terraform init -input=false
