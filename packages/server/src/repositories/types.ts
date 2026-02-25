@@ -33,6 +33,7 @@ export type Costume = {
   category: CostumeCategory;
   imageUrl: string;
   description: string;
+  weight: number;
 };
 
 export type CostumeRepository = {

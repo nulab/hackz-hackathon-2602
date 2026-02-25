@@ -4,7 +4,7 @@ import { PrimaryButton } from "../../../components/PrimaryButton";
 import { CameraCapture } from "../../../components/CameraCapture";
 import { storage } from "../../../lib/storage";
 import { ITEMS } from "../../../lib/items";
-import { drawGacha, addToInventory } from "../../../lib/api";
+import { trpc } from "../../../lib/trpc";
 import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
 import { uiImages, itemImages } from "../../../assets/images";
 import styles from "./index.module.css";
@@ -25,10 +25,20 @@ const HomePage = () => {
     setCameraOpen(false);
   };
 
+  const pullGacha = trpc.gacha.pull.useMutation({
+    onSuccess: (result) => {
+      navigate({
+        to: "/u/$userId/gacha/$costumeKey",
+        params: { userId, costumeKey: result.costume.id },
+      });
+    },
+  });
+
   const handleGacha = () => {
-    const item = drawGacha();
-    addToInventory(item.id);
-    navigate({ to: "/u/$userId/gacha/$costumeKey", params: { userId, costumeKey: item.id } });
+    if (pullGacha.isPending) {
+      return;
+    }
+    pullGacha.mutate();
   };
 
   return (

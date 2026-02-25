@@ -7,15 +7,23 @@ import { storage } from "../../../lib/storage";
 import { ITEMS } from "../../../lib/items";
 import type { ItemLayer } from "../../../lib/items";
 import { saveSelection } from "../../../lib/api";
+import { trpc } from "../../../lib/trpc";
 import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
 import { uiImages, itemImages } from "../../../assets/images";
+import type { InventoryMap } from "../../../lib/storage";
 import styles from "./costumes.module.css";
 
 const CostumesPage = () => {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [inventoryMap] = useState(() => storage.getInventory());
+  const { data } = trpc.costumes.list.useQuery();
+  const inventoryMap: InventoryMap = {};
+  if (data?.costumes) {
+    for (const costume of data.costumes) {
+      inventoryMap[costume.id] = { count: costume.count };
+    }
+  }
   const [selectedItemIds, setSelectedItemIds] = useState(() => storage.getSelectedItems());
   const photo = storage.getPhoto();
 

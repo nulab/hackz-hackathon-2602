@@ -1,23 +1,21 @@
 import { gachaResultSchema } from "@hackz/shared";
 import { protectedProcedure, router } from "../trpc";
 import { roomStore } from "../../room-store";
-import { pullGacha } from "../../domain/gacha";
+import { selectCostume } from "../../domain/gacha";
+import { createDynamoDBCostumeRepository } from "../../repositories/dynamodb/costume-repository";
+import { createDynamoDBUserCostumeRepository } from "../../repositories/dynamodb/user-costume-repository";
+
+const costumeRepo = createDynamoDBCostumeRepository();
+const userCostumeRepo = createDynamoDBUserCostumeRepository();
 
 export const gachaRouter = router({
   pull: protectedProcedure.output(gachaResultSchema).mutation(async ({ ctx }) => {
-    const { rarity } = pullGacha();
+    const allCostumes = await costumeRepo.findAll();
+    const selected = selectCostume(allCostumes);
+    const { isNew } = await userCostumeRepo.acquire(ctx.userId, selected.id);
 
-    // TODO: Fetch actual costume from DynamoDB based on rarity
-    const costume = {
-      id: `costume-${Date.now()}`,
-      name: `Costume (${rarity})`,
-      rarity,
-      category: "top" as const,
-      imageUrl: "https://placeholder.example.com/costume.jpg",
-      description: "A beautiful costume",
-    };
+    const { weight: _, version: __, ...costume } = selected;
 
-    // Broadcast to projector subscribers
     roomStore.broadcast("projector", {
       type: "gacha:result",
       payload: {
@@ -29,6 +27,6 @@ export const gachaRouter = router({
       },
     });
 
-    return { costume, isNew: true };
+    return { costume, isNew };
   }),
 });
