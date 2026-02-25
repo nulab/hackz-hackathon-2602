@@ -2,15 +2,46 @@
 # Outputs — 各リソースの重要な値を出力
 # ============================================================
 
-# ------ App Runner ------
-output "apprunner_service_url" {
-  description = "App Runner サービスの URL（HTTPS）"
-  value       = "https://${aws_apprunner_service.server.service_url}"
+# ------ CloudFront ------
+output "cloudfront_domain" {
+  description = "CloudFront ドメイン名（フロントエンド + API プロキシ）"
+  value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
 }
 
-output "apprunner_service_id" {
-  description = "App Runner サービス ID"
-  value       = aws_apprunner_service.server.service_id
+output "cloudfront_distribution_id" {
+  description = "CloudFront ディストリビューション ID（キャッシュ無効化に使用）"
+  value       = aws_cloudfront_distribution.frontend.id
+}
+
+output "frontend_urls" {
+  description = "各フロントエンドアプリの URL"
+  value = {
+    admin     = "https://${aws_cloudfront_distribution.frontend.domain_name}/admin/"
+    mobile    = "https://${aws_cloudfront_distribution.frontend.domain_name}/mobile/"
+    projector = "https://${aws_cloudfront_distribution.frontend.domain_name}/projector/"
+  }
+}
+
+# ------ ALB ------
+output "alb_dns_name" {
+  description = "ALB の DNS 名（CloudFront のオリジンとして使用）"
+  value       = aws_lb.server.dns_name
+}
+
+# ------ ECS ------
+output "ecs_cluster_name" {
+  description = "ECS クラスター名"
+  value       = aws_ecs_cluster.main.name
+}
+
+output "ecs_service_name" {
+  description = "ECS サービス名（force-new-deployment 時に使用）"
+  value       = aws_ecs_service.server.name
+}
+
+output "ecs_deploy_command" {
+  description = "ECR への新しいイメージ push 後に ECS を再デプロイするコマンド"
+  value       = "aws ecs update-service --cluster ${aws_ecs_cluster.main.name} --service ${aws_ecs_service.server.name} --force-new-deployment --region ${var.aws_region}"
 }
 
 # ------ ECR ------
@@ -25,6 +56,11 @@ output "ecr_docker_login_command" {
 }
 
 # ------ S3 ------
+output "s3_frontend_bucket_name" {
+  description = "フロントエンド静的ファイル用 S3 バケット名"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
 output "s3_uploads_bucket_name" {
   description = "アップロードバケット名（ユーザー写真）"
   value       = aws_s3_bucket.uploads.bucket
@@ -33,26 +69,6 @@ output "s3_uploads_bucket_name" {
 output "s3_contents_bucket_name" {
   description = "コンテンツバケット名（システム素材・読み取り専用）"
   value       = aws_s3_bucket.contents.bucket
-}
-
-# ------ Amplify ------
-output "amplify_app_id" {
-  description = "Amplify アプリ ID"
-  value       = aws_amplify_app.frontend.id
-}
-
-output "amplify_default_domain" {
-  description = "Amplify のデフォルトドメイン"
-  value       = "https://main.${aws_amplify_app.frontend.default_domain}"
-}
-
-output "amplify_app_urls" {
-  description = "各フロントエンドアプリの URL"
-  value = {
-    admin     = "https://main.${aws_amplify_app.frontend.default_domain}/admin/"
-    mobile    = "https://main.${aws_amplify_app.frontend.default_domain}/mobile/"
-    projector = "https://main.${aws_amplify_app.frontend.default_domain}/projector/"
-  }
 }
 
 # ------ DynamoDB ------

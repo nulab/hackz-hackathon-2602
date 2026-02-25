@@ -1,20 +1,19 @@
-name: Deploy to GitHub Pages
+name: Deploy Frontend to S3 + CloudFront
 
 on:
   push:
     branches: [main]
 
 permissions:
-  pages: write
   id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      S3_FRONTEND_BUCKET: hackz-nulab-26-frontend
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -29,45 +28,35 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          # CloudFront と同一ドメインで /trpc/* を ALB にプロキシするため相対パスを使用
+          VITE_API_URL: /trpc
 
       - name: Assemble site
         run: |
-          mkdir -p _site/admin _site/projector
-          cp -r apps/admin/dist/* _site/admin/
-          cp -r apps/projector/dist/* _site/projector/
-          cat > _site/index.html << 'HTML'
-          <!DOCTYPE html>
-          <html lang="ja">
-          <head>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>hackz-hackathon-2602</title>
-            <style>
-              body { font-family: system-ui, sans-serif; max-width: 480px; margin: 80px auto; padding: 0 16px; }
-              a { display: block; padding: 16px; margin: 12px 0; background: #f3f4f6; border-radius: 8px; text-decoration: none; color: #111; font-size: 1.1rem; }
-              a:hover { background: #e5e7eb; }
-            </style>
-          </head>
-          <body>
-            <h1>hackz-hackathon-2602</h1>
-            <a href="./admin/">Admin</a>
-            <a href="./projector/">Projector</a>
-          </body>
-          </html>
-          HTML
+          # admin / projector は vite.config.ts の base に合わせたパスに配置
+          mkdir -p _site/hackz-hackathon-2602/admin
+          mkdir -p _site/hackz-hackathon-2602/projector
+          cp -r apps/admin/dist/* _site/hackz-hackathon-2602/admin/
+          cp -r apps/projector/dist/* _site/hackz-hackathon-2602/projector/
+          # mobile は base 未設定（/）のためルートに配置
+          cp -r apps/mobile/dist/* _site/
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          path: _site
+          role-to-assume: arn:aws:iam::643665102109:role/github_actions
+          aws-region: ap-northeast-1
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+      - name: Sync to S3
+        run: |
+          aws s3 sync _site/ s3://$S3_FRONTEND_BUCKET/ \
+            --delete \
+            --cache-control "public, max-age=86400"
+
+      - name: Invalidate CloudFront cache
+        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+            --paths "/*"
