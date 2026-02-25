@@ -1,0 +1,159 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { QRCodeSVG } from "qrcode.react";
+import type { UpstreamMessage } from "@hackz/shared";
+import { useProjectorConnection } from "../webrtc/useProjectorConnection";
+import type { ProjectorConnectionState } from "../webrtc/ProjectorConnection";
+
+type ScanEntry = {
+  type: "NFC" | "QR";
+  data: string;
+  time: Date;
+};
+
+const ADMIN_BASE = import.meta.env.VITE_ADMIN_URL || "/hackz-hackathon-2602/admin";
+
+const getStatusColor = (state: ProjectorConnectionState): string => {
+  switch (state) {
+    case "connected":
+      return "bg-green-500";
+    case "connecting":
+      return "bg-yellow-500 animate-pulse";
+    case "waiting":
+      return "bg-blue-500 animate-pulse";
+    default:
+      return "bg-red-500";
+  }
+};
+
+const getStatusText = (state: ProjectorConnectionState): string => {
+  switch (state) {
+    case "connected":
+      return "Admin 接続中";
+    case "connecting":
+      return "接続中...";
+    case "waiting":
+      return "Admin 待ち";
+    default:
+      return "未接続";
+  }
+};
+
+const PairPage = () => {
+  const { state, roomId, open, close, disconnectAdmin, onMessage } = useProjectorConnection();
+  const [pairUrl, setPairUrl] = useState<string | null>(null);
+  const [scans, setScans] = useState<ScanEntry[]>([]);
+  const openRef = useRef(open);
+  const closeRef = useRef(close);
+  openRef.current = open;
+  closeRef.current = close;
+
+  // ルーム作成
+  useEffect(() => {
+    openRef.current();
+    return () => {
+      closeRef.current();
+    };
+  }, []);
+
+  // ペアリングURL生成
+  useEffect(() => {
+    if (!roomId) {
+      return;
+    }
+    const base = ADMIN_BASE.startsWith("http")
+      ? ADMIN_BASE
+      : `${window.location.origin}${ADMIN_BASE}`;
+    const url = `${base.replace(/\/$/, "")}/connect/${roomId}`;
+    setPairUrl(url);
+  }, [roomId]);
+
+  // Admin からのメッセージ
+  const handleMessage = useCallback((msg: UpstreamMessage) => {
+    switch (msg.type) {
+      case "NFC_SCANNED":
+        setScans((prev) =>
+          [{ type: "NFC" as const, data: msg.nfcId, time: new Date() }, ...prev].slice(0, 50),
+        );
+        break;
+      case "QR_SCANNED":
+        setScans((prev) =>
+          [{ type: "QR" as const, data: msg.data, time: new Date() }, ...prev].slice(0, 50),
+        );
+        break;
+    }
+  }, []);
+
+  useEffect(() => {
+    onMessage(handleMessage);
+  }, [onMessage, handleMessage]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
+      {/* ステータス */}
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <span className={`inline-block w-3 h-3 rounded-full ${getStatusColor(state)}`} />
+        <span className="text-sm text-gray-400">{getStatusText(state)}</span>
+        {state === "connected" && (
+          <button
+            type="button"
+            onClick={disconnectAdmin}
+            className="ml-2 px-3 py-1 text-xs bg-red-600 hover:bg-red-700 rounded"
+          >
+            切断
+          </button>
+        )}
+      </div>
+
+      {/* 未接続: ペアリングURL表示 */}
+      {state !== "connected" && pairUrl && (
+        <div className="flex flex-col items-center gap-6">
+          <h1 className="text-3xl font-bold">ペアリング</h1>
+          <QRCodeSVG value={pairUrl} size={280} bgColor="#111827" fgColor="#ffffff" level="M" />
+          <p className="text-gray-400 text-sm max-w-md text-center">
+            Android 端末で以下の URL を開いてください
+          </p>
+          <div className="bg-gray-800 rounded-lg px-4 py-2 max-w-lg">
+            <code className="text-blue-400 text-xs break-all">{pairUrl}</code>
+          </div>
+          {roomId && <p className="text-xs text-gray-600">Room: {roomId}</p>}
+        </div>
+      )}
+
+      {/* 接続済み: スキャン結果表示 */}
+      {state === "connected" && (
+        <div className="flex flex-col items-center gap-6 w-full max-w-2xl px-4">
+          <h1 className="text-3xl font-bold">接続済み</h1>
+          <p className="text-green-400">Admin 端末からスキャンデータを受信中</p>
+
+          {scans.length === 0 ? (
+            <p className="text-gray-500 text-sm">まだスキャンデータはありません</p>
+          ) : (
+            <div className="w-full space-y-2 max-h-[60vh] overflow-y-auto">
+              {scans.map((scan, i) => (
+                <div
+                  key={`${scan.time.getTime()}-${i}`}
+                  className={`p-3 rounded-lg ${scan.type === "NFC" ? "bg-indigo-900/50 border border-indigo-700" : "bg-teal-900/50 border border-teal-700"}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`text-xs font-mono px-2 py-0.5 rounded ${scan.type === "NFC" ? "bg-indigo-600" : "bg-teal-600"}`}
+                    >
+                      {scan.type}
+                    </span>
+                    <span className="text-xs text-gray-400">{scan.time.toLocaleTimeString()}</span>
+                  </div>
+                  <p className="text-sm font-mono break-all">{scan.data}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const Route = createFileRoute("/pair")({
+  component: PairPage,
+});
