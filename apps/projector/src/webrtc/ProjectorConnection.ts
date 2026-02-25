@@ -1,3 +1,5 @@
+import Peer from "peerjs";
+import type { DataConnection } from "peerjs";
 import { parseUpstreamMessage, serializeMessage } from "@hackz/shared";
 import type { UpstreamMessage, DownstreamMessage } from "@hackz/shared";
 
@@ -6,16 +8,12 @@ export type ProjectorConnectionState = "waiting" | "connecting" | "connected" | 
 type MessageHandler = (msg: UpstreamMessage) => void;
 type StateHandler = (state: ProjectorConnectionState) => void;
 
-const RTC_CONFIG: RTCConfiguration = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }],
-};
-
 const HEARTBEAT_INTERVAL = 5_000;
 const HEARTBEAT_TIMEOUT = 15_000;
 
 export class ProjectorConnection {
-  private pc: RTCPeerConnection | null = null;
-  private dataChannel: RTCDataChannel | null = null;
+  private peer: Peer | null = null;
+  private conn: DataConnection | null = null;
   private state: ProjectorConnectionState = "disconnected";
   private messageHandlers = new Set<MessageHandler>();
   private stateHandlers = new Set<StateHandler>();
@@ -33,62 +31,40 @@ export class ProjectorConnection {
     return this.state;
   }
 
-  /** シグナリングで Admin 参加通知を受けた後に呼ぶ */
-  async createOffer(): Promise<string> {
-    this.pc = new RTCPeerConnection(RTC_CONFIG);
-    this.setState("connecting");
+  /** PeerJS サーバーに接続し、peerId を返す */
+  open(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const peer = new Peer();
+      this.peer = peer;
+      this.setState("waiting");
 
-    this.pc.oniceconnectionstatechange = () => {
-      if (
-        this.pc?.iceConnectionState === "disconnected" ||
-        this.pc?.iceConnectionState === "failed"
-      ) {
-        this.setState("disconnected");
-        this.stopHeartbeat();
-      }
-    };
+      peer.on("open", (id) => {
+        resolve(id);
+      });
 
-    this.dataChannel = this.pc.createDataChannel("admin", { ordered: true });
-    this.setupDataChannel(this.dataChannel);
+      peer.on("connection", (conn) => {
+        this.conn = conn;
+        this.setState("connecting");
+        this.setupConnection(conn);
+      });
 
-    const offer = await this.pc.createOffer();
-    await this.pc.setLocalDescription(offer);
-    return JSON.stringify(offer);
-  }
+      peer.on("error", (err) => {
+        if (this.state === "waiting" && !this.conn) {
+          reject(err);
+        }
+      });
 
-  /** Admin の answer SDP を受け取る */
-  async handleAnswer(answerPayload: string) {
-    if (!this.pc) {
-      return;
-    }
-    const answer = JSON.parse(answerPayload) as RTCSessionDescriptionInit;
-    await this.pc.setRemoteDescription(answer);
-  }
-
-  /** ICE candidate を受け取る */
-  async handleIceCandidate(candidatePayload: string) {
-    if (!this.pc) {
-      return;
-    }
-    const candidate = JSON.parse(candidatePayload) as RTCIceCandidateInit;
-    await this.pc.addIceCandidate(candidate);
-  }
-
-  /** ICE candidate 生成時のコールバックを設定 */
-  onIceCandidate(handler: (candidate: string) => void) {
-    if (!this.pc) {
-      return;
-    }
-    this.pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        handler(JSON.stringify(e.candidate));
-      }
-    };
+      peer.on("disconnected", () => {
+        if (this.state !== "disconnected") {
+          peer.reconnect();
+        }
+      });
+    });
   }
 
   send(msg: DownstreamMessage) {
-    if (this.dataChannel?.readyState === "open") {
-      this.dataChannel.send(serializeMessage(msg));
+    if (this.conn?.open) {
+      this.conn.send(serializeMessage(msg));
     }
   }
 
@@ -102,27 +78,48 @@ export class ProjectorConnection {
     return () => this.stateHandlers.delete(handler);
   }
 
+  /** Admin だけ切断し、Peer は維持（同じ QR で再接続可能） */
   disconnectAdmin() {
     this.send({ type: "DISCONNECT", reason: "Disconnected by projector" });
-    setTimeout(() => this.cleanup(), 100);
+    setTimeout(() => {
+      this.stopHeartbeat();
+      this.conn?.close();
+      this.conn = null;
+      this.setState("waiting");
+    }, 100);
   }
 
+  /** Peer ごと完全に閉じる */
   close() {
-    this.cleanup();
+    this.stopHeartbeat();
+    this.conn?.close();
+    this.conn = null;
+    this.peer?.destroy();
+    this.peer = null;
+    this.setState("disconnected");
   }
 
-  private setupDataChannel(dc: RTCDataChannel) {
-    dc.onopen = () => {
+  private setupConnection(conn: DataConnection) {
+    conn.on("open", () => {
       this.setState("connected");
       this.startHeartbeat();
-    };
-    dc.onclose = () => {
-      this.setState("disconnected");
+    });
+
+    conn.on("close", () => {
       this.stopHeartbeat();
-    };
-    dc.onmessage = (e) => {
+      this.conn = null;
+      this.setState("waiting");
+    });
+
+    conn.on("error", () => {
+      this.stopHeartbeat();
+      this.conn = null;
+      this.setState("waiting");
+    });
+
+    conn.on("data", (raw) => {
       try {
-        const msg = parseUpstreamMessage(e.data as string);
+        const msg = parseUpstreamMessage(raw as string);
         if (msg.type === "PONG") {
           this.lastPongAt = Date.now();
           return;
@@ -133,7 +130,7 @@ export class ProjectorConnection {
       } catch {
         // invalid message, ignore
       }
-    };
+    });
   }
 
   private startHeartbeat() {
@@ -141,8 +138,10 @@ export class ProjectorConnection {
     this.heartbeatTimer = setInterval(() => {
       this.send({ type: "PING" });
       if (Date.now() - this.lastPongAt > HEARTBEAT_TIMEOUT) {
-        this.setState("disconnected");
-        this.cleanup();
+        this.stopHeartbeat();
+        this.conn?.close();
+        this.conn = null;
+        this.setState("waiting");
       }
     }, HEARTBEAT_INTERVAL);
   }
@@ -152,14 +151,5 @@ export class ProjectorConnection {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
-  }
-
-  private cleanup() {
-    this.stopHeartbeat();
-    this.dataChannel?.close();
-    this.dataChannel = null;
-    this.pc?.close();
-    this.pc = null;
-    this.setState("disconnected");
   }
 }

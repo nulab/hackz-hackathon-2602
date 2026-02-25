@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { UpstreamMessage } from "@hackz/shared";
 import { ProjectorConnection } from "./ProjectorConnection";
 import type { ProjectorConnectionState } from "./ProjectorConnection";
-import { trpc } from "../lib/trpc";
 
 export const useProjectorConnection = () => {
   const connectionRef = useRef<ProjectorConnection | null>(null);
@@ -12,76 +11,24 @@ export const useProjectorConnection = () => {
     null,
   );
 
-  const createRoomMutation = trpc.signaling.createRoom.useMutation();
-  const sendSignalMutation = trpc.signaling.sendSignal.useMutation();
-  const closeRoomMutation = trpc.signaling.closeRoom.useMutation();
-
-  // Projector 向けシグナリング SSE
-  trpc.signaling.onSignalForProjector.useSubscription(
-    { roomId: roomId ?? "" },
-    {
-      enabled: !!roomId && state !== "connected",
-      onData: async (event) => {
-        const conn = connectionRef.current;
-        if (!conn || !roomId) {
-          return;
-        }
-
-        switch (event.type) {
-          case "joined": {
-            const offerPayload = await conn.createOffer();
-            conn.onIceCandidate((candidate) => {
-              sendSignalMutation.mutate({
-                roomId,
-                type: "ice-candidate",
-                payload: candidate,
-                from: "projector",
-              });
-            });
-            sendSignalMutation.mutate({
-              roomId,
-              type: "offer",
-              payload: offerPayload,
-              from: "projector",
-            });
-            break;
-          }
-          case "answer":
-            await conn.handleAnswer(event.payload);
-            break;
-          case "ice-candidate":
-            await conn.handleIceCandidate(event.payload);
-            break;
-        }
-      },
-    },
-  );
-
   const open = useCallback(async () => {
     const conn = new ProjectorConnection();
     connectionRef.current = conn;
     conn.onStateChange(setState);
 
-    const { roomId: newRoomId } = await createRoomMutation.mutateAsync();
-    setRoomId(newRoomId);
-    conn.onStateChange((s) => {
-      setState(s);
-    });
-    setState("waiting");
-  }, [createRoomMutation]);
+    const peerId = await conn.open();
+    setRoomId(peerId);
+  }, []);
 
   const disconnectAdmin = useCallback(() => {
     connectionRef.current?.disconnectAdmin();
   }, []);
 
-  const close = useCallback(async () => {
+  const close = useCallback(() => {
     connectionRef.current?.close();
     connectionRef.current = null;
-    if (roomId) {
-      await closeRoomMutation.mutateAsync({ roomId });
-      setRoomId(null);
-    }
-  }, [roomId, closeRoomMutation]);
+    setRoomId(null);
+  }, []);
 
   const onMessage = useCallback((handler: (msg: UpstreamMessage) => void) => {
     setMessageHandler(() => handler);
