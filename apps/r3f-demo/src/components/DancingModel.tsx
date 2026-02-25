@@ -421,6 +421,13 @@ export const DancingModel = () => {
           allClips.push(hacucho);
         }
 
+        // 4. Standing Greeting
+        const greeting = await loadAnimationFromFBX("/models/Standing Greeting.fbx");
+        if (greeting) {
+          greeting.name = "StandingGreeting";
+          allClips.push(greeting);
+        }
+
         clips.current = allClips;
         console.log(
           `[Model] ${allClips.length} clips:`,
