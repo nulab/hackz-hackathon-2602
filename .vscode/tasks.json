@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker Compose Up",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
+      "label": "Docker Compose Down",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "silent",
+        "close": true
+      }
+    },
+    {
+      "label": "Init Local DB",
+      "type": "shell",
+      "command": "bun run db:init",
+      "problemMatcher": [],
+      "group": "none",
+      "dependsOn": ["Docker Compose Up"]
+    },
+    {
+      "label": "Setup Local Environment",
+      "type": "shell",
+      "command": "echo 'Local environment ready!'",
+      "dependsOn": ["Docker Compose Up", "Init Local DB"],
+      "problemMatcher": [],
+      "group": "none"
+    }
+  ]
+}

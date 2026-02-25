@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import", "react", "unicorn"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "react/react-in-jsx-scope": "off",
+    "import/no-unassigned-import": "off",
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "func-style": ["error", "expression"],
+
+    "typescript/consistent-type-imports": [
+      "error",
+      { "prefer": "type-imports", "fixStyle": "separate-type-imports" }
+    ],
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "typescript/array-type": ["error", { "default": "array" }],
+    "typescript/consistent-generic-constructors": ["error", "constructor"],
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "as" }],
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-non-null-assertion": "warn",
+
+    "eqeqeq": ["error", "always"],
+    "prefer-const": "error",
+    "no-var": "error",
+    "curly": "error",
+    "no-nested-ternary": "error",
+    "prefer-template": "error",
+    "no-else-return": "error",
+    "no-console": "warn",
+    "arrow-body-style": ["error", "as-needed"],
+
+    "react/self-closing-comp": "error",
+    "react/jsx-boolean-value": ["error", "never"],
+    "react/jsx-curly-brace-presence": ["error", { "props": "never", "children": "never" }],
+    "react/jsx-fragments": ["error", "syntax"],
+    "react/jsx-no-useless-fragment": "error",
+
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-string-slice": "error",
+    "unicorn/no-array-for-each": "warn"
+  },
+  "ignorePatterns": [
+    "packages/typespec/**",
+    "packages/api-client/generated/**",
+    "dist/**",
+    "node_modules/**",
+    "*.config.*",
+    ".agents/**",
+    ".claude/**"
+  ]
+}

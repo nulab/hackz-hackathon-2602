@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git rev-parse *)",
+      "Bash(git ls-files *)",
+
+      "Bash(ni)",
+      "Bash(ni *)",
+      "Bash(nr *)",
+      "Bash(nlx *)",
+      "Bash(nun *)",
+      "Bash(nci)",
+
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(find *)",
+      "Bash(rg *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(diff *)",
+      "Bash(echo *)",
+      "Bash(jq *)",
+      "Bash(xargs *)",
+      "Bash(dirname *)",
+      "Bash(basename *)",
+      "Bash(file *)",
+      "Bash(touch *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+
+      "Bash(ls)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(env)",
+      "Bash(uname *)",
+      "Bash(which *)",
+      "Bash(type *)",
+      "Bash(tree *)",
+      "Bash(node *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh api *)"
+    ],
+    "deny": ["Read(./.env*)", "Read(./secrets/**)"]
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true
+  }
+}

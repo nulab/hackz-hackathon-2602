@@ -1,0 +1,2 @@
+# Auto-generated route trees — on conflict, accept theirs (the incoming change)
+apps/*/src/routeTree.gen.ts merge=theirs

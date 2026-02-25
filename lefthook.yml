@@ -1,0 +1,19 @@
+pre-commit:
+  piped: true
+  jobs:
+    - name: secretlint
+      run: npx secretlint {staged_files}
+
+    - name: sort-package-json
+      glob: "**/package.json"
+      run: npx sort-package-json {staged_files}
+      stage_fixed: true
+
+    - name: lint-fix
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs}"
+      run: npx oxlint --fix {staged_files} || true
+      stage_fixed: true
+
+    - name: format
+      run: npx oxfmt --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true

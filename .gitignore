@@ -1,0 +1,33 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# TypeSpec output
+packages/typespec/tsp-output/
+
+# Generated API types
+packages/api-client/generated/
+
+# Vite
+*.local
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bun
+bun.lock
+
+# Turbo
+.turbo
+
+# Local development files
+.local/
