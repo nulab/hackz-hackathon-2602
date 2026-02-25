@@ -58,10 +58,14 @@ jobs:
 
       - name: Migrate subnet state (one-time)
         run: |
-          # public[1] (10.0.2.0/24) を private にリネーム。
+          # public[1] (10.0.2.0/24) → private へ state リネーム。
           # CIDR 変更による forced replacement を回避（ALB ENI がサブネット削除をブロックするため）。
-          # 移行済みの場合は no-op。
-          terraform state mv 'aws_subnet.public[1]' aws_subnet.private 2>/dev/null || true
+          if terraform state show 'aws_subnet.public[1]' >/dev/null 2>&1; then
+            echo "Migrating aws_subnet.public[1] → aws_subnet.private"
+            terraform state mv 'aws_subnet.public[1]' aws_subnet.private
+          else
+            echo "State migration already complete (public[1] not found)"
+          fi
         working-directory: terraform
 
       - name: Terraform Plan
