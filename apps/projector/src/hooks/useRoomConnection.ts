@@ -12,21 +12,29 @@ export const useRoomConnection = () => {
   const heartbeatMutation = trpc.room.heartbeat.useMutation();
   const disconnectMutation = trpc.room.disconnect.useMutation();
 
+  // Refs for mutation methods to avoid re-render loops in dependency arrays
+  const createRef = useRef(createMutation.mutateAsync);
+  const heartbeatRef = useRef(heartbeatMutation.mutateAsync);
+  const disconnectRef = useRef(disconnectMutation.mutate);
+  createRef.current = createMutation.mutateAsync;
+  heartbeatRef.current = heartbeatMutation.mutateAsync;
+  disconnectRef.current = disconnectMutation.mutate;
+
   const open = useCallback(async () => {
-    const result = await createMutation.mutateAsync();
+    const result = await createRef.current();
     roomIdRef.current = result.roomId;
     setRoomId(result.roomId);
     setState("waiting");
-  }, [createMutation]);
+  }, []);
 
   const close = useCallback(() => {
     if (roomIdRef.current) {
-      disconnectMutation.mutate({ roomId: roomIdRef.current, role: "projector" });
+      disconnectRef.current({ roomId: roomIdRef.current, role: "projector" });
     }
     roomIdRef.current = null;
     setRoomId(null);
     setState("disconnected");
-  }, [disconnectMutation]);
+  }, []);
 
   const disconnectAdmin = useCallback(() => {
     // Admin's heartbeat will timeout, nothing to do server-side
@@ -42,7 +50,7 @@ export const useRoomConnection = () => {
 
     const interval = setInterval(async () => {
       try {
-        const result = await heartbeatMutation.mutateAsync({
+        const result = await heartbeatRef.current({
           roomId: currentRoomId,
           role: "projector",
         });
@@ -52,16 +60,16 @@ export const useRoomConnection = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [roomId, heartbeatMutation]);
+  }, [roomId]);
 
   // Cleanup on unmount
   useEffect(
     () => () => {
       if (roomIdRef.current) {
-        disconnectMutation.mutate({ roomId: roomIdRef.current, role: "projector" });
+        disconnectRef.current({ roomId: roomIdRef.current, role: "projector" });
       }
     },
-    [disconnectMutation],
+    [],
   );
 
   return { state, roomId, open, close, disconnectAdmin };
