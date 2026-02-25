@@ -45,11 +45,12 @@ export const createDynamoDBUserRepository = (): UserRepository => ({
           TableName: TABLE,
           Key: { id: user.id },
           UpdateExpression:
-            "SET #name = :name, photoUrl = :photoUrl, equippedBuildId = :equippedBuildId, totalScore = :totalScore, version = :nextVersion",
+            "SET #name = :name, #token = :token, photoUrl = :photoUrl, equippedBuildId = :equippedBuildId, totalScore = :totalScore, version = :nextVersion",
           ConditionExpression: "version = :currentVersion",
-          ExpressionAttributeNames: { "#name": "name" },
+          ExpressionAttributeNames: { "#name": "name", "#token": "token" },
           ExpressionAttributeValues: {
             ":name": user.name,
+            ":token": user.token,
             ":photoUrl": user.photoUrl ?? null,
             ":equippedBuildId": user.equippedBuildId ?? null,
             ":totalScore": user.totalScore,

@@ -19,6 +19,7 @@ export type Rank = z.infer<typeof rankSchema>;
 export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
+  token: z.string(),
   photoUrl: z.string().optional(),
   equippedBuildId: z.string().optional(),
   totalScore: z.number().default(0),

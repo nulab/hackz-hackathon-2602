@@ -6,8 +6,16 @@ import { trpc } from "./trpc";
 const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 const getAuthHeaders = () => {
+  const headers: Record<string, string> = {};
   const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const userToken = localStorage.getItem("userToken");
+  if (userToken) {
+    headers["X-User-Token"] = userToken;
+  }
+  return headers;
 };
 
 export const TRPCProvider = ({ children }: { children: React.ReactNode }) => {
