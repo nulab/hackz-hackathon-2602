@@ -12,6 +12,22 @@ import { uiImages, itemImages } from "../../../assets/images";
 import type { InventoryMap } from "../../../lib/storage";
 import styles from "./costumes.module.css";
 
+const TEXTURE_DEFAULTS = {
+  upper: "/models/sozai_tops.png",
+  lower: "/models/sozai_bottoms_vivid.png",
+  shoes: "/models/sozai_shoes.png",
+};
+
+const resolveTextureUrl = (
+  itemId: string | undefined,
+  layer: keyof typeof TEXTURE_DEFAULTS,
+): string => {
+  if (!itemId) {
+    return TEXTURE_DEFAULTS[layer];
+  }
+  return `/costumes/texture_${itemId}.png`;
+};
+
 const findByLayer = (itemIds: string[], layer: ItemLayer): string | undefined =>
   itemIds.find((id) => {
     const item = ITEMS.find((i) => i.id === id);
@@ -122,7 +138,12 @@ const CostumesPage = () => {
       <div className={styles.closetInfo}>
         <div className={styles.characterSection}>
           <div className={styles.characterImage}>
-            <DancingModelCanvas faceImageUrl={faceImageUrl} />
+            <DancingModelCanvas
+              faceImageUrl={faceImageUrl}
+              topsUrl={resolveTextureUrl(findByLayer(selectedItemIds, "upper"), "upper")}
+              bottomsUrl={resolveTextureUrl(findByLayer(selectedItemIds, "lower"), "lower")}
+              shoesUrl={resolveTextureUrl(findByLayer(selectedItemIds, "shoes"), "shoes")}
+            />
             {selectedItems.length > 0 && (
               <div className={styles.characterBadges}>
                 {selectedItems.map((item) => (

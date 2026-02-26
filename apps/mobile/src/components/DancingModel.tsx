@@ -121,7 +121,13 @@ const REGION_THRESHOLDS = {
 };
 
 // --- 高さベースで頂点を4部位に分類 → マルチテクスチャシェーダー適用 ---
-const applyHeightBasedTextures = async (mesh: THREE.Mesh, faceImageUrl?: string | null) => {
+const applyHeightBasedTextures = async (
+  mesh: THREE.Mesh,
+  faceImageUrl?: string | null,
+  topsUrl?: string,
+  bottomsUrl?: string,
+  shoesUrl?: string,
+) => {
   const geometry = mesh.geometry;
   const pos = geometry.attributes.position;
 
@@ -200,9 +206,9 @@ const applyHeightBasedTextures = async (mesh: THREE.Mesh, faceImageUrl?: string 
   const headTextureUrl = faceImageUrl || "/models/free_face.png";
   const [headTex, topsTex, bottomsTex, shoesTex] = await Promise.all([
     loadProcessedTexture(headTextureUrl, { bgColor: "#2a1a0a" }),
-    loadProcessedTexture("/models/sozai_tops.png"),
-    loadProcessedTexture("/models/sozai_bottoms_vivid.png"),
-    loadProcessedTexture("/models/sozai_shoes.png"),
+    loadProcessedTexture(topsUrl || "/models/sozai_tops.png"),
+    loadProcessedTexture(bottomsUrl || "/models/sozai_bottoms_vivid.png"),
+    loadProcessedTexture(shoesUrl || "/models/sozai_shoes.png"),
   ]);
 
   // マルチテクスチャ・シェーダーマテリアル
@@ -280,10 +286,18 @@ const applyHeightBasedTextures = async (mesh: THREE.Mesh, faceImageUrl?: string 
 
 type DancingModelProps = {
   faceImageUrl?: string | null;
+  topsUrl?: string;
+  bottomsUrl?: string;
+  shoesUrl?: string;
 };
 
 // --- メインコンポーネント ---
-export const DancingModel = ({ faceImageUrl }: DancingModelProps) => {
+export const DancingModel = ({
+  faceImageUrl,
+  topsUrl,
+  bottomsUrl,
+  shoesUrl,
+}: DancingModelProps) => {
   const [scene, setScene] = useState<THREE.Group | null>(null);
   const groupRef = useRef<THREE.Group>(null);
   const mixer = useRef<THREE.AnimationMixer | null>(null);
@@ -320,7 +334,7 @@ export const DancingModel = ({ faceImageUrl }: DancingModelProps) => {
         }
       });
       for (const mesh of allMeshes) {
-        await applyHeightBasedTextures(mesh, faceImageUrl);
+        await applyHeightBasedTextures(mesh, faceImageUrl, topsUrl, bottomsUrl, shoesUrl);
       }
 
       // アニメーション適用
@@ -335,7 +349,7 @@ export const DancingModel = ({ faceImageUrl }: DancingModelProps) => {
       mixer.current?.stopAllAction();
       mixer.current = null;
     };
-  }, [faceImageUrl]);
+  }, [faceImageUrl, topsUrl, bottomsUrl, shoesUrl]);
 
   useFrame((_, delta) => {
     mixer.current?.update(delta);
