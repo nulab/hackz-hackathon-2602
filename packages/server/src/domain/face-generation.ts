@@ -18,9 +18,9 @@ export const validatePhotoSize = (base64: string, maxBytes: number): void => {
 export const buildNovaCanvasRequest = (base64Image: string) => ({
   taskType: "IMAGE_VARIATION",
   imageVariationParams: {
-    text: "A clean, front-facing anime-style face illustration suitable for 3D model texture mapping. Smooth cel-shaded coloring, clear outlines, symmetrical features, neutral expression, solid white background.",
+    text: "A front-facing face and hair illustration for a 3D character model texture. The face and hair must fill the entire rectangular canvas with NO background visible. Low-poly PS2-era game texture style: limited color palette, flat shading, slightly pixelated, early 2000s CG aesthetic. Simple geometric features, muted tones, minimal detail like a UV-mapped face texture from a low-polygon 3D model.",
     negativeText:
-      "blurry, distorted, deformed, asymmetric, dark background, photorealistic, text, watermark",
+      "background, scenery, sky, room, photorealistic, high detail, smooth gradient, modern rendering, text, watermark, blurry, distorted, deformed",
     images: [base64Image],
     similarityStrength: 0.7,
   },
