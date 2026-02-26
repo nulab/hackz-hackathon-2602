@@ -26,11 +26,11 @@ export const buildNovaCanvasRequest = (base64Image: string) => ({
   taskType: "IMAGE_VARIATION",
   imageVariationParams: {
     text: [
-      "A front-facing UV face texture map for a low-poly 3D character head model.",
-      "OUTPUT FORMAT: A single flat square image. The face fills 100% of the canvas with zero background, zero margin, zero padding. No 3D perspective, no lighting shadows — purely a flat diffuse texture sheet.",
-      "LAYOUT top-to-bottom: Dark brown/black hair filling the top edge (#2a1a0a). Forehead skin. Eyebrows. Eyes (preserve the subject's eye color and shape). Nose. Mouth. Chin and jawline skin at the bottom edge. Left and right edges show hair or dark tones that blend with the back-of-head color (#2a1a0a).",
-      "PRESERVE from input: exact eye color, hair color, skin tone, facial hair if any, glasses if any. These features must be recognizable from the original photo.",
-      "STYLE: Early 2000s low-polygon 3D game texture (PS1/PS2 era). Simplified geometry, limited color palette (max 64 colors), flat matte shading with no specular highlights, visible color banding, slightly exaggerated features. Reference: Virtua Fighter, Final Fantasy VII-X, Tekken 3 face textures.",
+      "Front-facing UV face texture map for a low-poly 3D character head.",
+      "OUTPUT: Flat square image, face fills 100% of canvas, zero background/margin/padding. No 3D perspective or shadows — flat diffuse texture.",
+      "LAYOUT top-to-bottom: Dark brown/black hair at top edge (#2a1a0a). Forehead. Eyebrows. Eyes (preserve subject's eye color/shape). Nose. Mouth. Chin/jawline at bottom edge. Side edges show hair/dark tones blending with back-of-head color (#2a1a0a).",
+      "PRESERVE: exact eye color, hair color, skin tone, facial hair, glasses. Must be recognizable from original.",
+      "STYLE: PS1/PS2 era low-poly game texture. Limited palette (max 64 colors), flat matte shading, no specular highlights, color banding, slightly exaggerated. Ref: Virtua Fighter, FF VII-X, Tekken 3.",
     ].join(" "),
     negativeText:
       "background, scenery, room, wall, sky, shoulders, torso, body, clothing, necklace, frame, border, margin, padding, 3D rendering, depth, perspective, shadow, specular highlight, photorealistic, hyper-detailed, smooth gradient, modern rendering, anime, cartoon, text, watermark, logo, blurry, distorted, deformed",
