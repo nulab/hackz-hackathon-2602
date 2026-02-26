@@ -10,6 +10,8 @@ import { resolveTextures } from "../lib/texture-resolver";
 import { pickRandomBackground } from "../lib/background-list";
 
 const ViewerPage = () => {
+  const { bg } = Route.useSearch();
+  const hideBackground = bg === "black";
   useEffect(() => {
     if (!("wakeLock" in navigator)) {
       return;
@@ -69,7 +71,7 @@ const ViewerPage = () => {
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[3, 5, 3]} intensity={0.8} />
-        {user && bgPath && <SceneBackground path={bgPath} />}
+        {user && bgPath && !hideBackground && <SceneBackground path={bgPath} />}
         {user && (
           <CharacterModel
             key={user.id}
@@ -86,4 +88,7 @@ const ViewerPage = () => {
 
 export const Route = createFileRoute("/viewer")({
   component: ViewerPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    bg: (search.bg as string) || undefined,
+  }),
 });
