@@ -3,6 +3,7 @@ name: AWS Infrastructure Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch: # 手動実行を許可（terraform apply の再実行など）
 
 concurrency:
   group: deploy-infra
