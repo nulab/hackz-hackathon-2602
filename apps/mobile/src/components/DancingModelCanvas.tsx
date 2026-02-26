@@ -3,9 +3,12 @@ import { DancingModel } from "./DancingModel";
 
 type Props = {
   faceImageUrl?: string | null;
+  topsUrl?: string;
+  bottomsUrl?: string;
+  shoesUrl?: string;
 };
 
-export const DancingModelCanvas = ({ faceImageUrl }: Props) => (
+export const DancingModelCanvas = ({ faceImageUrl, topsUrl, bottomsUrl, shoesUrl }: Props) => (
   <div style={{ width: "100%", aspectRatio: "1/2", position: "relative", zIndex: 1 }}>
     <Canvas
       camera={{ position: [0, 0.75, 1.8], fov: 50 }}
@@ -13,7 +16,12 @@ export const DancingModelCanvas = ({ faceImageUrl }: Props) => (
     >
       <ambientLight intensity={0.6} />
       <directionalLight position={[3, 5, 3]} intensity={0.8} />
-      <DancingModel faceImageUrl={faceImageUrl} />
+      <DancingModel
+        faceImageUrl={faceImageUrl}
+        topsUrl={topsUrl}
+        bottomsUrl={bottomsUrl}
+        shoesUrl={shoesUrl}
+      />
     </Canvas>
   </div>
 );
