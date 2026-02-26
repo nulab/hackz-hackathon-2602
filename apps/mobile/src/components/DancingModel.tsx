@@ -259,7 +259,7 @@ const applyHeightBasedTextures = async (
       "#include <color_fragment>",
       `#include <color_fragment>
       vec4 texColor;
-      vec2 tiledUV = fract(vRegionUV * 2.0);
+      vec2 tiledUV = fract(vRegionUV);
       if (vBodyRegion < 0.5) {
         texColor = texture2D(shoesMap, tiledUV);
       } else if (vBodyRegion < 1.5) {
