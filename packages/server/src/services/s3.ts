@@ -10,7 +10,7 @@ const s3 = new S3Client({
   region: process.env.AWS_REGION || "ap-northeast-1",
 });
 
-const BUCKET = process.env.S3_BUCKET || "hackz-nulab-26";
+const BUCKET = process.env.S3_UPLOADS_BUCKET || "hackz-nulab-26-uploads";
 
 export const uploadFile = async (
   key: string,

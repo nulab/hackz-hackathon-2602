@@ -118,15 +118,16 @@ Socket.IO の代わりに tRPC SSE subscriptions を使用:
 
 ## Environment Variables (Server)
 
-| 変数                    | 説明                    | ローカル開発時の値      |
-| ----------------------- | ----------------------- | ----------------------- |
-| `DYNAMODB_ENDPOINT`     | DynamoDB エンドポイント | `http://localhost:8787` |
-| `AWS_REGION`            | AWS リージョン          | `ap-northeast-1`        |
-| `AWS_ACCESS_KEY_ID`     | AWS アクセスキー        | `local`                 |
-| `AWS_SECRET_ACCESS_KEY` | AWS シークレットキー    | `local`                 |
-| `S3_BUCKET`             | S3 バケット名           | `hackz-nulab-26`        |
-| `JWT_SECRET`            | JWT 署名キー            | 任意の文字列            |
-| `PORT`                  | サーバーポート          | `3000`                  |
+| 変数                    | 説明                    | ローカル開発時の値        |
+| ----------------------- | ----------------------- | ------------------------- |
+| `DYNAMODB_ENDPOINT`     | DynamoDB エンドポイント | `http://localhost:8787`   |
+| `AWS_REGION`            | AWS リージョン          | `ap-northeast-1`          |
+| `AWS_ACCESS_KEY_ID`     | AWS アクセスキー        | `local`                   |
+| `AWS_SECRET_ACCESS_KEY` | AWS シークレットキー    | `local`                   |
+| `S3_UPLOADS_BUCKET`     | S3 アップロードバケット | `hackz-nulab-26-uploads`  |
+| `S3_CONTENTS_BUCKET`    | S3 コンテンツバケット   | `hackz-nulab-26-contents` |
+| `JWT_SECRET`            | JWT 署名キー            | 任意の文字列              |
+| `PORT`                  | サーバーポート          | `3000`                    |
 
 ## DynamoDB Tables
 
