@@ -10,17 +10,13 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 const isAuthed = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.userId) {
+  if (!ctx.userId || !ctx.userToken) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
-  }
-
-  if (!ctx.userToken) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "User token required" });
   }
 
   const user = await userRepository.findById(ctx.userId);
   if (!user || user.token !== ctx.userToken) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Invalid user token" });
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid user token" });
   }
 
   return next({ ctx: { ...ctx, userId: ctx.userId } });

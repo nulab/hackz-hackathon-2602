@@ -3,7 +3,6 @@ import { nfcLoginInputSchema, registerPairingInputSchema, userSchema } from "@ha
 import { TRPCError } from "@trpc/server";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import { publicProcedure, router } from "../trpc";
-import { signToken } from "../../lib/jwt";
 import { createDynamoDBUserRepository } from "../../repositories/dynamodb/user-repository";
 
 const userRepository = createDynamoDBUserRepository();
@@ -11,7 +10,7 @@ const userRepository = createDynamoDBUserRepository();
 export const authRouter = router({
   nfcLogin: publicProcedure
     .input(nfcLoginInputSchema)
-    .output(z.object({ token: z.string(), user: userSchema }))
+    .output(z.object({ user: userSchema }))
     .mutation(async ({ input }) => {
       const { nfcId } = input;
 
@@ -31,10 +30,7 @@ export const authRouter = router({
         });
       }
 
-      const jwtToken = await signToken(user.id);
-
       return {
-        token: jwtToken,
         user: {
           id: user.id,
           name: user.name,
