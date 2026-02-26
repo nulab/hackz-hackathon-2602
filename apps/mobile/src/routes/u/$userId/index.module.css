@@ -92,6 +92,12 @@
   text-align: center;
 }
 
+.buttonRow {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
 .generatingOverlay {
   position: fixed;
   inset: 0;
