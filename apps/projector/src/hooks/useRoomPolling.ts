@@ -13,7 +13,7 @@ export const useRoomPolling = (
   onMessagesRef.current = onMessages;
 
   const { data } = trpc.room.poll.useQuery(
-    { roomId: roomId!, channel, afterId: cursorRef.current },
+    { roomId: roomId!, channel },
     {
       enabled: !!roomId,
       refetchInterval: intervalMs,
@@ -24,7 +24,11 @@ export const useRoomPolling = (
     if (!data || data.messages.length === 0) {
       return;
     }
+    const newMessages = data.messages.filter((m) => m.id > cursorRef.current);
+    if (newMessages.length === 0) {
+      return;
+    }
     cursorRef.current = data.lastId;
-    onMessagesRef.current(data.messages as RoomMessage[]);
+    onMessagesRef.current(newMessages as RoomMessage[]);
   }, [data]);
 };
