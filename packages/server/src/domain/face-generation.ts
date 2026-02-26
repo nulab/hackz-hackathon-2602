@@ -26,21 +26,21 @@ export const buildNovaCanvasRequest = (base64Image: string) => ({
   taskType: "IMAGE_VARIATION",
   imageVariationParams: {
     text: [
-      "A 3DCG texture map image generated from the face in the input photo.",
-      "The entire canvas is filled with detailed skin and hair textures.",
-      "In the center, the flattened facial features of the person from the input photo are arranged as a texture map: hair at the top, forehead skin, eyes, nose, mouth, chin and jawline at the bottom.",
-      "The surrounding area seamlessly extends these textures of skin and hair, creating a complete, high-resolution UV map ready for 3D model application.",
-      "STYLE: Early 2000s low-polygon 3D game texture (PS1/PS2 era). Limited color palette, flat matte shading, slightly simplified features, visible color banding. NOT photorealistic, NOT modern anime. Think Virtua Fighter, Final Fantasy VII-X face textures.",
+      "A front-facing UV face texture map for a low-poly 3D character head model.",
+      "OUTPUT FORMAT: A single flat square image. The face fills 100% of the canvas with zero background, zero margin, zero padding. No 3D perspective, no lighting shadows — purely a flat diffuse texture sheet.",
+      "LAYOUT top-to-bottom: Dark brown/black hair filling the top edge (#2a1a0a). Forehead skin. Eyebrows. Eyes (preserve the subject's eye color and shape). Nose. Mouth. Chin and jawline skin at the bottom edge. Left and right edges show hair or dark tones that blend with the back-of-head color (#2a1a0a).",
+      "PRESERVE from input: exact eye color, hair color, skin tone, facial hair if any, glasses if any. These features must be recognizable from the original photo.",
+      "STYLE: Early 2000s low-polygon 3D game texture (PS1/PS2 era). Simplified geometry, limited color palette (max 64 colors), flat matte shading with no specular highlights, visible color banding, slightly exaggerated features. Reference: Virtua Fighter, Final Fantasy VII-X, Tekken 3 face textures.",
     ].join(" "),
     negativeText:
-      "background, scenery, wall, sky, shoulders, body, clothing, frame, border, margin, padding, photorealistic, high detail, smooth gradient, modern rendering, text, watermark, blurry, distorted",
+      "background, scenery, room, wall, sky, shoulders, torso, body, clothing, necklace, frame, border, margin, padding, 3D rendering, depth, perspective, shadow, specular highlight, photorealistic, hyper-detailed, smooth gradient, modern rendering, anime, cartoon, text, watermark, logo, blurry, distorted, deformed",
     images: [base64Image],
-    similarityStrength: 0.7,
+    similarityStrength: 0.55,
   },
   imageGenerationConfig: {
     numberOfImages: 1,
-    height: 512,
-    width: 512,
-    cfgScale: 8.0,
+    height: 1024,
+    width: 1024,
+    cfgScale: 10.0,
   },
 });
