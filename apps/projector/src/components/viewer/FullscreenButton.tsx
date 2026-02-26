@@ -5,6 +5,11 @@ const getFullscreenElement = (): Element | null =>
   (document as unknown as { webkitFullscreenElement: Element | null }).webkitFullscreenElement ??
   null;
 
+const isStandalone = (): boolean =>
+  window.matchMedia("(display-mode: fullscreen)").matches ||
+  window.matchMedia("(display-mode: standalone)").matches ||
+  ("standalone" in navigator && (navigator as unknown as { standalone: boolean }).standalone);
+
 const canFullscreen = (): boolean => {
   const el = document.documentElement as HTMLElement & {
     webkitRequestFullscreen?: () => Promise<void>;
@@ -17,7 +22,7 @@ export const FullscreenButton = () => {
   const [supported, setSupported] = useState(true);
 
   useEffect(() => {
-    if (!canFullscreen()) {
+    if (isStandalone() || !canFullscreen()) {
       setSupported(false);
       return;
     }
