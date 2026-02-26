@@ -248,3 +248,27 @@ export const roomHeartbeatOutputSchema = z.object({
   peerConnected: z.boolean(),
   peerLastSeen: z.number(),
 });
+
+// === Projector Viewer Schemas ===
+
+export const activeUserOutputSchema = z.object({
+  user: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      photoUrl: z.string().optional(),
+    })
+    .nullable(),
+  build: z
+    .object({
+      faceId: z.string().optional(),
+      upperId: z.string().optional(),
+      lowerId: z.string().optional(),
+      shoesId: z.string().optional(),
+    })
+    .nullable(),
+});
+
+export const setActiveUserInputSchema = z.object({
+  nfcId: z.string().min(1),
+});

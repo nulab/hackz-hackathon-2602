@@ -6,6 +6,7 @@ import { costumesRouter } from "./costumes";
 import { sessionsRouter } from "./sessions";
 import { synthesisRouter } from "./synthesis";
 import { roomRouter } from "./room";
+import { projectorViewerRouter } from "./projector-viewer";
 
 export const appRouter = router({
   auth: authRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   sessions: sessionsRouter,
   synthesis: synthesisRouter,
   room: roomRouter,
+  projectorViewer: projectorViewerRouter,
 });
 
 export type AppRouter = typeof appRouter;
