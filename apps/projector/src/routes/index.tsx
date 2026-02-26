@@ -60,6 +60,10 @@ const ProjectorPage = () => {
   const sendRef = useRef(sendMutation.mutate);
   sendRef.current = sendMutation.mutate;
 
+  const setActiveUserMutation = trpc.projectorViewer.setActiveUser.useMutation();
+  const setActiveRef = useRef(setActiveUserMutation.mutate);
+  setActiveRef.current = setActiveUserMutation.mutate;
+
   useEffect(() => {
     openRef.current();
     return () => {
@@ -81,6 +85,7 @@ const ProjectorPage = () => {
 
         if (result.found && result.user) {
           setDisplay({ type: "found", user: result.user });
+          setActiveRef.current({ nfcId });
 
           sendRef.current({
             roomId,
