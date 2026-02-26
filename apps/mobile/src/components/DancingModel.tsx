@@ -121,7 +121,7 @@ const REGION_THRESHOLDS = {
 };
 
 // --- 高さベースで頂点を4部位に分類 → マルチテクスチャシェーダー適用 ---
-const applyHeightBasedTextures = async (mesh: THREE.Mesh) => {
+const applyHeightBasedTextures = async (mesh: THREE.Mesh, faceImageUrl?: string | null) => {
   const geometry = mesh.geometry;
   const pos = geometry.attributes.position;
 
@@ -196,9 +196,10 @@ const applyHeightBasedTextures = async (mesh: THREE.Mesh) => {
   geometry.setAttribute("bodyRegion", new THREE.BufferAttribute(bodyRegion, 1));
   geometry.setAttribute("regionUV", new THREE.BufferAttribute(regionUV, 2));
 
-  // 4テクスチャ並行読み込み
+  // 4テクスチャ並行読み込み（顔はユーザー画像またはデフォルト）
+  const headTextureUrl = faceImageUrl || "/models/free_face.png";
   const [headTex, topsTex, bottomsTex, shoesTex] = await Promise.all([
-    loadProcessedTexture("/models/free_face.png", { bgColor: "#2a1a0a" }),
+    loadProcessedTexture(headTextureUrl, { bgColor: "#2a1a0a" }),
     loadProcessedTexture("/models/sozai_tops.png"),
     loadProcessedTexture("/models/sozai_bottoms_vivid.png"),
     loadProcessedTexture("/models/sozai_shoes.png"),
@@ -277,8 +278,12 @@ const applyHeightBasedTextures = async (mesh: THREE.Mesh) => {
   }
 };
 
+type DancingModelProps = {
+  faceImageUrl?: string | null;
+};
+
 // --- メインコンポーネント ---
-export const DancingModel = () => {
+export const DancingModel = ({ faceImageUrl }: DancingModelProps) => {
   const [scene, setScene] = useState<THREE.Group | null>(null);
   const groupRef = useRef<THREE.Group>(null);
   const mixer = useRef<THREE.AnimationMixer | null>(null);
@@ -315,7 +320,7 @@ export const DancingModel = () => {
         }
       });
       for (const mesh of allMeshes) {
-        await applyHeightBasedTextures(mesh);
+        await applyHeightBasedTextures(mesh, faceImageUrl);
       }
 
       // アニメーション適用
@@ -330,7 +335,7 @@ export const DancingModel = () => {
       mixer.current?.stopAllAction();
       mixer.current = null;
     };
-  }, []);
+  }, [faceImageUrl]);
 
   useFrame((_, delta) => {
     mixer.current?.update(delta);

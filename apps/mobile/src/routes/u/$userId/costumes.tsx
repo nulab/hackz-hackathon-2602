@@ -32,7 +32,7 @@ const CostumesPage = () => {
     }
   }
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
-  const photo = storage.getPhoto();
+  const faceImageUrl = storage.getFaceImageUrl();
 
   useEffect(() => {
     if (buildData) {
@@ -122,11 +122,7 @@ const CostumesPage = () => {
       <div className={styles.closetInfo}>
         <div className={styles.characterSection}>
           <div className={styles.characterImage}>
-            {photo ? (
-              <img src={photo} alt="撮影した写真" className={styles.photoPreview} />
-            ) : (
-              <DancingModelCanvas />
-            )}
+            <DancingModelCanvas faceImageUrl={faceImageUrl} />
             {selectedItems.length > 0 && (
               <div className={styles.characterBadges}>
                 {selectedItems.map((item) => (

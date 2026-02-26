@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PrimaryButton } from "../../../components/PrimaryButton";
 import { CameraCapture } from "../../../components/CameraCapture";
 import { useToast } from "../../../components/Toast";
@@ -8,8 +8,21 @@ import { cropFace } from "../../../lib/face-crop";
 import { ITEMS } from "../../../lib/items";
 import { trpc } from "../../../lib/trpc";
 import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
-import { uiImages, itemImages } from "../../../assets/images";
+import { uiImages, itemImages, cardImages } from "../../../assets/images";
 import styles from "./index.module.css";
+
+const prefetchImages = () => {
+  const urls = [
+    ...Object.values(cardImages),
+    ...Object.values(itemImages),
+    uiImages.cardBack,
+    uiImages.cardBackSsr,
+  ];
+  for (const url of urls) {
+    const img = new Image();
+    img.src = url;
+  }
+};
 
 const HomePage = () => {
   const { userId } = Route.useParams();
@@ -17,8 +30,13 @@ const HomePage = () => {
   const { showToast } = useToast();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [_photo, setPhoto] = useState(() => storage.getPhoto());
+  const [faceImageUrl, setFaceImageUrl] = useState(() => storage.getFaceImageUrl());
   const [isGenerating, setIsGenerating] = useState(false);
   const { data: buildData } = trpc.costumes.getBuild.useQuery();
+
+  useEffect(() => {
+    prefetchImages();
+  }, []);
 
   const selectedItemIds: string[] = [];
   if (buildData) {
@@ -43,6 +61,7 @@ const HomePage = () => {
   const generateFace = trpc.users.generateFace.useMutation({
     onSuccess: (result) => {
       storage.saveFaceImageUrl(result.faceImageUrl);
+      setFaceImageUrl(result.faceImageUrl);
       showToast("イラストが完成したよ！", "success");
       setIsGenerating(false);
     },
@@ -64,7 +83,8 @@ const HomePage = () => {
         photo: croppedDataURL,
         contentType: "image/jpeg",
       });
-    } catch {
+    } catch (err) {
+      console.error("[handleCapture] cropFace failed:", err);
       showToast("顔の検出に失敗しました…", "error");
       setIsGenerating(false);
     }
@@ -94,7 +114,7 @@ const HomePage = () => {
 
       <div className={styles.characterSection}>
         <div className={styles.characterImage}>
-          <DancingModelCanvas />
+          <DancingModelCanvas faceImageUrl={faceImageUrl} />
           {selectedItems.length > 0 && (
             <div className={styles.characterBadges}>
               {selectedItems.map((item) => (
