@@ -10,6 +10,22 @@ import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
 import { uiImages, itemImages, cardImages } from "../../../assets/images";
 import styles from "./index.module.css";
 
+const TEXTURE_DEFAULTS = {
+  upper: "/models/sozai_tops.png",
+  lower: "/models/sozai_bottoms_vivid.png",
+  shoes: "/models/sozai_shoes.png",
+};
+
+const resolveTextureUrl = (
+  itemId: string | undefined,
+  layer: keyof typeof TEXTURE_DEFAULTS,
+): string => {
+  if (!itemId) {
+    return TEXTURE_DEFAULTS[layer];
+  }
+  return `/costumes/texture_${itemId}.png`;
+};
+
 const prefetchImages = () => {
   const urls = [
     ...Object.values(cardImages),
@@ -106,7 +122,12 @@ const HomePage = () => {
 
       <div className={styles.characterSection}>
         <div className={styles.characterImage}>
-          <DancingModelCanvas faceImageUrl={faceImageUrl} />
+          <DancingModelCanvas
+            faceImageUrl={faceImageUrl}
+            topsUrl={resolveTextureUrl(buildData?.upperId, "upper")}
+            bottomsUrl={resolveTextureUrl(buildData?.lowerId, "lower")}
+            shoesUrl={resolveTextureUrl(buildData?.shoesId, "shoes")}
+          />
           {selectedItems.length > 0 && (
             <div className={styles.characterBadges}>
               {selectedItems.map((item) => (
