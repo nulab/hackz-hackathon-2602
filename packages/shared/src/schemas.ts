@@ -64,10 +64,10 @@ export const costumeBuildSchema = z.object({
   userId: z.string(),
   buildId: z.string(),
   name: z.string(),
-  topId: z.string().optional(),
-  bottomId: z.string().optional(),
-  accessoryId: z.string().optional(),
-  hairId: z.string().optional(),
+  faceId: z.string().optional(),
+  upperId: z.string().optional(),
+  lowerId: z.string().optional(),
+  shoesId: z.string().optional(),
   isDefault: z.boolean().default(false),
   createdAt: z.string(),
 });
@@ -123,21 +123,11 @@ export const equipBuildInputSchema = z.object({
   buildId: z.string().min(1),
 });
 
-export const createBuildInputSchema = z.object({
-  name: z.string().min(1),
-  topId: z.string().optional(),
-  bottomId: z.string().optional(),
-  accessoryId: z.string().optional(),
-  hairId: z.string().optional(),
-});
-
-export const updateBuildInputSchema = z.object({
-  buildId: z.string().min(1),
-  name: z.string().min(1).optional(),
-  topId: z.string().nullable().optional(),
-  bottomId: z.string().nullable().optional(),
-  accessoryId: z.string().nullable().optional(),
-  hairId: z.string().nullable().optional(),
+export const saveBuildInputSchema = z.object({
+  faceId: z.string().optional(),
+  upperId: z.string().optional(),
+  lowerId: z.string().optional(),
+  shoesId: z.string().optional(),
 });
 
 export const createSessionInputSchema = z.object({

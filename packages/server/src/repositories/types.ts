@@ -65,10 +65,10 @@ export type CostumeBuild = {
   userId: string;
   buildId: string;
   name: string;
-  topId?: string;
-  bottomId?: string;
-  accessoryId?: string;
-  hairId?: string;
+  faceId?: string;
+  upperId?: string;
+  lowerId?: string;
+  shoesId?: string;
   isDefault: boolean;
   createdAt: string;
 };
