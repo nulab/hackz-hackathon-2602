@@ -1,21 +1,57 @@
 import { useCallback, useEffect, useState } from "react";
 
+const getFullscreenElement = (): Element | null =>
+  document.fullscreenElement ??
+  (document as unknown as { webkitFullscreenElement: Element | null }).webkitFullscreenElement ??
+  null;
+
+const canFullscreen = (): boolean => {
+  const el = document.documentElement as HTMLElement & {
+    webkitRequestFullscreen?: () => Promise<void>;
+  };
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+};
+
 export const FullscreenButton = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [supported, setSupported] = useState(true);
 
   useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    if (!canFullscreen()) {
+      setSupported(false);
+      return;
+    }
+    const onChange = () => setIsFullscreen(!!getFullscreenElement());
     document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange);
+    };
   }, []);
 
   const toggle = useCallback(() => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
+    if (getFullscreenElement()) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else {
+        (document as unknown as { webkitExitFullscreen: () => void }).webkitExitFullscreen();
+      }
     } else {
-      document.documentElement.requestFullscreen();
+      const el = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
     }
   }, []);
+
+  if (!supported) {
+    return null;
+  }
 
   return (
     <button
