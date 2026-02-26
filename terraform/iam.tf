@@ -129,11 +129,11 @@ resource "aws_iam_role_policy" "ecs_task" {
           "${aws_s3_bucket.contents.arn}/*"
         ]
       },
-      # Bedrock アクセス（画像合成）
+      # Bedrock フルアクセス（画像合成）
       {
         Sid      = "Bedrock"
         Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
+        Action   = ["bedrock:*"]
         Resource = "*"
       },
       # Rekognition アクセス（顔検出）
