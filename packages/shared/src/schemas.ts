@@ -148,6 +148,16 @@ export const registerPairingInputSchema = z.object({
   token: z.string().uuid(),
 });
 
+export const checkPairingInputSchema = z.object({
+  nfcId: z.string().optional(),
+  userId: z.string().optional(),
+});
+
+export const checkPairingOutputSchema = z.object({
+  nfcLinked: z.boolean(),
+  userLinked: z.boolean(),
+});
+
 // === SSE Event Schemas ===
 
 export const nfcScannedEventSchema = z.object({

@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { nfcLoginInputSchema, registerPairingInputSchema, userSchema } from "@hackz/shared";
+import {
+  checkPairingInputSchema,
+  checkPairingOutputSchema,
+  nfcLoginInputSchema,
+  registerPairingInputSchema,
+  userSchema,
+} from "@hackz/shared";
 import { TRPCError } from "@trpc/server";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import { publicProcedure, router } from "../trpc";
@@ -41,6 +47,25 @@ export const authRouter = router({
           createdAt: user.createdAt,
         },
       };
+    }),
+
+  checkPairing: publicProcedure
+    .input(checkPairingInputSchema)
+    .output(checkPairingOutputSchema)
+    .query(async ({ input }) => {
+      let nfcLinked = false;
+      let userLinked = false;
+
+      if (input.nfcId) {
+        const user = await userRepository.findByNfcId(input.nfcId);
+        nfcLinked = !!user;
+      }
+      if (input.userId) {
+        const user = await userRepository.findById(input.userId);
+        userLinked = !!user;
+      }
+
+      return { nfcLinked, userLinked };
     }),
 
   registerPairing: publicProcedure

@@ -98,6 +98,19 @@ const PairPage = () => {
 
   useRoomPolling(roomId, "upstream", 1000, handleMessages);
 
+  // 紐付け状態チェック
+  const nfcCheck = trpc.auth.checkPairing.useQuery(
+    { nfcId: latestNfc ?? undefined },
+    { enabled: !!latestNfc },
+  );
+  const qrCheck = trpc.auth.checkPairing.useQuery(
+    { userId: latestQr?.userId },
+    { enabled: !!latestQr },
+  );
+
+  const nfcAlreadyLinked = nfcCheck.data?.nfcLinked ?? false;
+  const qrAlreadyLinked = qrCheck.data?.userLinked ?? false;
+
   const registerPairing = trpc.auth.registerPairing.useMutation({
     onSuccess: (data) => {
       setRegisterResult({ success: true, message: `登録成功: ${data.user.name}` });
@@ -160,20 +173,50 @@ const PairPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               {/* NFC */}
-              <div className="bg-gray-900 rounded-lg p-4 border border-indigo-700">
-                <p className="text-xs font-mono text-indigo-400 mb-1">NFC ID</p>
+              <div
+                className={`bg-gray-900 rounded-lg p-4 border ${nfcAlreadyLinked ? "border-red-500 bg-red-950/30" : "border-indigo-700"}`}
+              >
+                <p
+                  className={`text-xs font-mono mb-1 ${nfcAlreadyLinked ? "text-red-400" : "text-indigo-400"}`}
+                >
+                  NFC ID
+                </p>
                 {latestNfc ? (
-                  <p className="text-sm font-mono break-all text-indigo-300">{latestNfc}</p>
+                  <>
+                    <p
+                      className={`text-sm font-mono break-all ${nfcAlreadyLinked ? "text-red-300" : "text-indigo-300"}`}
+                    >
+                      {latestNfc}
+                    </p>
+                    {nfcAlreadyLinked && (
+                      <p className="text-xs text-red-400 mt-2">このNFCは既に紐付けされています</p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500">未受信</p>
                 )}
               </div>
 
               {/* QR */}
-              <div className="bg-gray-900 rounded-lg p-4 border border-teal-700">
-                <p className="text-xs font-mono text-teal-400 mb-1">QR userId</p>
+              <div
+                className={`bg-gray-900 rounded-lg p-4 border ${qrAlreadyLinked ? "border-red-500 bg-red-950/30" : "border-teal-700"}`}
+              >
+                <p
+                  className={`text-xs font-mono mb-1 ${qrAlreadyLinked ? "text-red-400" : "text-teal-400"}`}
+                >
+                  QR userId
+                </p>
                 {latestQr ? (
-                  <p className="text-sm font-mono break-all text-teal-300">{latestQr.userId}</p>
+                  <>
+                    <p
+                      className={`text-sm font-mono break-all ${qrAlreadyLinked ? "text-red-300" : "text-teal-300"}`}
+                    >
+                      {latestQr.userId}
+                    </p>
+                    {qrAlreadyLinked && (
+                      <p className="text-xs text-red-400 mt-2">このQRは既に紐付けされています</p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-sm text-gray-500">未受信</p>
                 )}
@@ -183,7 +226,13 @@ const PairPage = () => {
             <button
               type="button"
               onClick={handleRegister}
-              disabled={!latestNfc || !latestQr || registerPairing.isPending}
+              disabled={
+                !latestNfc ||
+                !latestQr ||
+                nfcAlreadyLinked ||
+                qrAlreadyLinked ||
+                registerPairing.isPending
+              }
               className="w-full py-3 rounded-lg font-bold text-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {registerPairing.isPending ? "登録中..." : "登録"}
