@@ -75,7 +75,6 @@ jobs:
           fi
 
       - name: Configure AWS credentials
-        if: steps.check.outputs.changed == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_IAM_ROLE_ARN }}
@@ -108,6 +107,19 @@ jobs:
             --cluster "$ECS_CLUSTER" \
             --service "$ECS_SERVICE" \
             --force-new-deployment
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@3d267786b128fe76c2f16a390aa2448b815359f3 # v2.1.2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Seed DynamoDB costumes
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: bun run packages/server/scripts/seed-costumes.ts
 
       - name: Write current image ID for cache
         if: steps.check.outputs.changed == 'true'
