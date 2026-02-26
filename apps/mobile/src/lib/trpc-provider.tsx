@@ -8,9 +8,9 @@ const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
 const getAuthHeaders = () => {
   const headers: Record<string, string> = {};
-  const token = localStorage.getItem("token");
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  const userId = localStorage.getItem("userId");
+  if (userId) {
+    headers["X-User-Id"] = userId;
   }
   const userToken = localStorage.getItem("userToken");
   if (userToken) {

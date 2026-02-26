@@ -6,11 +6,13 @@ const searchSchema = z.object({
 });
 
 const UserLayout = () => {
+  const { userId } = Route.useParams();
   const { token } = Route.useSearch();
 
   if (token) {
     localStorage.setItem("userToken", token);
   }
+  localStorage.setItem("userId", userId);
 
   return <Outlet />;
 };

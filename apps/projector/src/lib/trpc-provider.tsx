@@ -5,10 +5,7 @@ import { trpc } from "./trpc";
 
 const API_URL = import.meta.env.VITE_API_URL || "/trpc";
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+const getAuthHeaders = () => ({});
 
 export const TRPCProvider = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient());
