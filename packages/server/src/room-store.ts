@@ -123,15 +123,15 @@ export class RoomStore {
       return false;
     }
 
-    if (role === "admin") {
-      room.adminLastSeen = 0;
-    } else {
+    if (role === "projector") {
       room.projectorLastSeen = 0;
+      // Only delete room if projector disconnects and no admin has been seen recently
+      if (room.adminLastSeen === 0) {
+        this.rooms.delete(roomId);
+      }
     }
-
-    if (room.adminLastSeen === 0 && room.projectorLastSeen === 0) {
-      this.rooms.delete(roomId);
-    }
+    // Admin disconnect is a no-op: other admin devices may still be connected.
+    // Staleness is detected via heartbeat timeout; room is cleaned up by TTL.
     return true;
   }
 

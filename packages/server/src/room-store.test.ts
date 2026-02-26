@@ -71,13 +71,24 @@ describe("RoomStore", () => {
     expect(result2.peerConnected).toBe(true);
   });
 
-  test("disconnect marks role as disconnected", () => {
+  test("admin disconnect does not affect peer status (multiple admins supported)", () => {
     const roomId = store.createRoom();
     store.heartbeat(roomId, "admin");
     store.heartbeat(roomId, "projector");
 
     store.disconnect(roomId, "admin");
+    // Admin disconnect is a no-op; adminLastSeen stays intact
     const result = store.heartbeat(roomId, "projector");
+    expect(result.peerConnected).toBe(true);
+  });
+
+  test("projector disconnect marks projector as disconnected", () => {
+    const roomId = store.createRoom();
+    store.heartbeat(roomId, "admin");
+    store.heartbeat(roomId, "projector");
+
+    store.disconnect(roomId, "projector");
+    const result = store.heartbeat(roomId, "admin");
     expect(result.peerConnected).toBe(false);
   });
 
