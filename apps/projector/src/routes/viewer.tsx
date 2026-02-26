@@ -72,6 +72,7 @@ const ViewerPage = () => {
         {user && bgPath && <SceneBackground path={bgPath} />}
         {user && (
           <CharacterModel
+            key={user.id}
             faceImageUrl={textures.face}
             topsUrl={textures.tops}
             bottomsUrl={textures.bottoms}

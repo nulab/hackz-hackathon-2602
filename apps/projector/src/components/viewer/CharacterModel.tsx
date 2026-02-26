@@ -5,9 +5,9 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
 // animations/ ディレクトリの Mixamo FBX ファイル
 const ANIMATION_URLS = [
-  "/models/animations/Breakdance Freeze Var 4.fbx",
-  "/models/animations/Ginga Variation 3.fbx",
-  "/models/animations/Wave Hip Hop Dance.fbx",
+  "/models/animations/Breakdance_Freeze_Var_4.fbx",
+  "/models/animations/Ginga_Variation_3.fbx",
+  "/models/animations/Wave_Hip_Hop_Dance.fbx",
 ];
 
 // --- Mixamo FBX からアニメーションだけ取り出す ---
