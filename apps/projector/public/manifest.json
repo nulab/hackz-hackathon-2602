@@ -1,0 +1,10 @@
+{
+  "name": "Idol Viewer",
+  "short_name": "Viewer",
+  "start_url": "./viewer",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}

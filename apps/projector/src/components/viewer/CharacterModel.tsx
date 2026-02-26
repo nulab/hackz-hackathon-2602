@@ -4,10 +4,13 @@ import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import breakdanceUrl from "../../assets/models/animations/Breakdance_Freeze_Var_4.fbx?url";
 import gingaUrl from "../../assets/models/animations/Ginga_Variation_3.fbx?url";
+import hipHopDancingUrl from "../../assets/models/animations/Hip_Hop_Dancing.fbx?url";
+import situpsUrl from "../../assets/models/animations/Situps.fbx?url";
+import swimmingUrl from "../../assets/models/animations/Swimming.fbx?url";
 import waveUrl from "../../assets/models/animations/Wave_Hip_Hop_Dance.fbx?url";
 
 // animations/ ディレクトリの Mixamo FBX ファイル
-const ANIMATION_URLS = [breakdanceUrl, gingaUrl, waveUrl];
+const ANIMATION_URLS = [breakdanceUrl, gingaUrl, hipHopDancingUrl, situpsUrl, swimmingUrl, waveUrl];
 
 // --- Mixamo FBX からアニメーションだけ取り出す ---
 const loadAnimationFromFBX = (url: string): Promise<THREE.AnimationClip | null> =>
