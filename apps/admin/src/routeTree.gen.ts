@@ -10,53 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ScanRoomIdRouteImport } from './routes/scan.$roomId'
-import { Route as ConnectRoomIdRouteImport } from './routes/connect.$roomId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ScanRoomIdRoute = ScanRoomIdRouteImport.update({
-  id: '/scan/$roomId',
-  path: '/scan/$roomId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConnectRoomIdRoute = ConnectRoomIdRouteImport.update({
-  id: '/connect/$roomId',
-  path: '/connect/$roomId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/connect/$roomId': typeof ConnectRoomIdRoute
-  '/scan/$roomId': typeof ScanRoomIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/connect/$roomId': typeof ConnectRoomIdRoute
-  '/scan/$roomId': typeof ScanRoomIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/connect/$roomId': typeof ConnectRoomIdRoute
-  '/scan/$roomId': typeof ScanRoomIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/connect/$roomId' | '/scan/$roomId'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/connect/$roomId' | '/scan/$roomId'
-  id: '__root__' | '/' | '/connect/$roomId' | '/scan/$roomId'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConnectRoomIdRoute: typeof ConnectRoomIdRoute
-  ScanRoomIdRoute: typeof ScanRoomIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,27 +48,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/scan/$roomId': {
-      id: '/scan/$roomId'
-      path: '/scan/$roomId'
-      fullPath: '/scan/$roomId'
-      preLoaderRoute: typeof ScanRoomIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/connect/$roomId': {
-      id: '/connect/$roomId'
-      path: '/connect/$roomId'
-      fullPath: '/connect/$roomId'
-      preLoaderRoute: typeof ConnectRoomIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConnectRoomIdRoute: ConnectRoomIdRoute,
-  ScanRoomIdRoute: ScanRoomIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
