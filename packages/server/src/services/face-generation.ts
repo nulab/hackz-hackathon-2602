@@ -33,7 +33,7 @@ export const generateFaceIllustration = async (
 
   // Step 1: Nova Pro で顔の特徴をテキスト化
   const describeRequest = buildNovaProDescribeRequest(croppedBase64);
-  const describeResponse = await invokeBedrock("ap.amazon.nova-pro-v1:0", describeRequest);
+  const describeResponse = await invokeBedrock("amazon.nova-lite-v2:0", describeRequest);
   const faceDescription =
     (describeResponse.output as { message?: { content?: { text?: string }[] } })?.message
       ?.content?.[0]?.text ?? "";
