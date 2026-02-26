@@ -150,16 +150,22 @@ const HomePage = () => {
             onClick={() => setCameraOpen(true)}
             className="button-position button-bottom-left-upper"
           >
-            しゃしんをとろう！
+            しゃしんを
+            <br />
+            とろう！
           </PrimaryButton>
           <PrimaryButton
             href={`/u/${userId}/costumes`}
             className="button-position button-bottom-right"
           >
-            コーディネートにちょうせん！
+            コーディネートに
+            <br />
+            ちょうせん！
           </PrimaryButton>
           <PrimaryButton onClick={handleGacha} className="button-position button-bottom-left-lower">
-            オシャレカードをゲット！
+            オシャレカードを
+            <br />
+            ゲット！
           </PrimaryButton>
 
           <img src={uiImages.magiccircle} alt="魔法陣" className={styles.magicCircle} />

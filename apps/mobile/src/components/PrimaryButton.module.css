@@ -4,6 +4,7 @@
   color: var(--color-white);
   font-weight: 600;
   text-align: center;
+  white-space: nowrap;
   width: 12rem;
   height: 10rem;
   display: flex;
