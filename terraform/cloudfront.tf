@@ -3,11 +3,11 @@
 #
 # 構成:
 #   デフォルト動作   → S3（admin / mobile / projector 静的ファイル）
-#   /trpc/*         → ALB（Hono バックエンド API）VPC Origin 経由
+#   /trpc/*         → ALB（Hono バックエンド API）
 #
-# VPC Origin:
-#   CloudFront → 内部 ALB をプライベート接続（インターネット経由なし）
-#   ALB はパブリックサブネットに配置しつつ internal = true
+# ALB アクセス制限:
+#   ALB SG を CloudFront マネージドプレフィックスリストで制限
+#   CloudFront IP 以外からの直接アクセスを遮断
 #
 # SPA ルーティング:
 #   CloudFront Function で拡張子なしパスを各アプリの index.html に書き換え
@@ -117,28 +117,6 @@ resource "aws_cloudfront_function" "spa_routing" {
 }
 
 # ----------------------------------------------------------
-# CloudFront VPC Origin — 内部 ALB へのプライベート接続
-# ----------------------------------------------------------
-resource "aws_cloudfront_vpc_origin" "alb" {
-  vpc_origin_endpoint_config {
-    name                   = "${var.app_name}-alb-vpc-origin"
-    arn                    = aws_lb.server.arn
-    http_port              = 80
-    https_port             = 443
-    origin_protocol_policy = "http-only"
-
-    origin_ssl_protocols {
-      items    = ["TLSv1.2"]
-      quantity = 1
-    }
-  }
-
-  tags = {
-    App = var.app_name
-  }
-}
-
-# ----------------------------------------------------------
 # CloudFront ディストリビューション
 # ----------------------------------------------------------
 locals {
@@ -158,15 +136,17 @@ resource "aws_cloudfront_distribution" "frontend" {
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
-  # Origin 2: ALB（Hono バックエンド）— VPC Origin 経由でプライベート接続
+  # Origin 2: ALB（Hono バックエンド）
+  # CloudFront → ALB は HTTP（ALB SG で CloudFront IP のみ許可）
   origin {
     domain_name = aws_lb.server.dns_name
     origin_id   = local.alb_origin_id
 
-    vpc_origin_config {
-      vpc_origin_id            = aws_cloudfront_vpc_origin.alb.id
-      origin_read_timeout      = 60
-      origin_keepalive_timeout = 5
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
