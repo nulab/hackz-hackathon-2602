@@ -4,7 +4,6 @@ import { PrimaryButton } from "../../../components/PrimaryButton";
 import { CameraCapture } from "../../../components/CameraCapture";
 import { useToast } from "../../../components/Toast";
 import { storage } from "../../../lib/storage";
-import { cropFace } from "../../../lib/face-crop";
 import { ITEMS } from "../../../lib/items";
 import { trpc } from "../../../lib/trpc";
 import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
@@ -71,23 +70,16 @@ const HomePage = () => {
     },
   });
 
-  const handleCapture = async (dataURL: string) => {
+  const handleCapture = (dataURL: string) => {
     storage.savePhoto(dataURL);
     setPhoto(dataURL);
     setCameraOpen(false);
     setIsGenerating(true);
 
-    try {
-      const croppedDataURL = await cropFace(dataURL);
-      generateFace.mutate({
-        photo: croppedDataURL,
-        contentType: "image/jpeg",
-      });
-    } catch (err) {
-      console.error("[handleCapture] cropFace failed:", err);
-      showToast("顔の検出に失敗しました…", "error");
-      setIsGenerating(false);
-    }
+    generateFace.mutate({
+      photo: dataURL,
+      contentType: "image/jpeg",
+    });
   };
 
   const pullGacha = trpc.gacha.pull.useMutation({
