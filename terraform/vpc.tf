@@ -141,26 +141,32 @@ resource "aws_route_table_association" "private" {
 # セキュリティグループ
 # ----------------------------------------------------------
 
-# ALB: VPC 内から HTTP(80) / HTTPS(443) を許可（CloudFront VPC Origin 経由）
-# インターネットからの直接アクセスは不可
+# CloudFront origin-facing マネージドプレフィックスリスト
+# CloudFront が ALB オリジンへ接続する際に使用する IP 範囲
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+# ALB: CloudFront からの HTTP(80) / HTTPS(443) のみ許可
+# マネージドプレフィックスリストにより CloudFront IP 以外からの直接アクセスを遮断
 resource "aws_security_group" "alb" {
   name   = "${var.app_name}-alb-sg"
   vpc_id = aws_vpc.main.id
 
   ingress {
-    description = "HTTP from VPC (CloudFront VPC Origin)"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [aws_vpc.main.cidr_block]
+    description     = "HTTP from CloudFront only"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
   }
 
   ingress {
-    description = "HTTPS from VPC (CloudFront VPC Origin)"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [aws_vpc.main.cidr_block]
+    description     = "HTTPS from CloudFront only"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
   }
 
   egress {
