@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PrimaryButton } from "../../../components/PrimaryButton";
 import { CameraCapture } from "../../../components/CameraCapture";
+import { useToast } from "../../../components/Toast";
 import { storage } from "../../../lib/storage";
+import { cropFace } from "../../../lib/face-crop";
 import { ITEMS } from "../../../lib/items";
 import { trpc } from "../../../lib/trpc";
 import { DancingModelCanvas } from "../../../components/DancingModelCanvas";
@@ -12,17 +14,43 @@ import styles from "./index.module.css";
 const HomePage = () => {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [_photo, setPhoto] = useState(() => storage.getPhoto());
+  const [isGenerating, setIsGenerating] = useState(false);
   const selectedItemIds = storage.getSelectedItems();
   const selectedItems = selectedItemIds
     .map((id) => ITEMS.find((item) => item.id === id))
     .filter((item): item is (typeof ITEMS)[number] => item !== undefined);
 
-  const handleCapture = (dataURL: string) => {
+  const generateFace = trpc.users.generateFace.useMutation({
+    onSuccess: (result) => {
+      storage.saveFaceImageUrl(result.faceImageUrl);
+      showToast("イラストが完成したよ！", "success");
+      setIsGenerating(false);
+    },
+    onError: () => {
+      showToast("イラストの生成に失敗しました…", "error");
+      setIsGenerating(false);
+    },
+  });
+
+  const handleCapture = async (dataURL: string) => {
     storage.savePhoto(dataURL);
     setPhoto(dataURL);
     setCameraOpen(false);
+    setIsGenerating(true);
+
+    try {
+      const croppedDataURL = await cropFace(dataURL);
+      generateFace.mutate({
+        photo: croppedDataURL,
+        contentType: "image/jpeg",
+      });
+    } catch {
+      showToast("顔の検出に失敗しました…", "error");
+      setIsGenerating(false);
+    }
   };
 
   const pullGacha = trpc.gacha.pull.useMutation({
@@ -93,6 +121,15 @@ const HomePage = () => {
         onCapture={handleCapture}
         onClose={() => setCameraOpen(false)}
       />
+
+      {isGenerating && (
+        <div className={styles.generatingOverlay}>
+          <div className={styles.generatingContent}>
+            <div className={styles.spinner} />
+            <p>イラストを生成中…</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
