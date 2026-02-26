@@ -14,7 +14,24 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [_photo, setPhoto] = useState(() => storage.getPhoto());
-  const selectedItemIds = storage.getSelectedItems();
+  const { data: buildData } = trpc.costumes.getBuild.useQuery();
+
+  const selectedItemIds: string[] = [];
+  if (buildData) {
+    if (buildData.faceId) {
+      selectedItemIds.push(buildData.faceId);
+    }
+    if (buildData.upperId) {
+      selectedItemIds.push(buildData.upperId);
+    }
+    if (buildData.lowerId) {
+      selectedItemIds.push(buildData.lowerId);
+    }
+    if (buildData.shoesId) {
+      selectedItemIds.push(buildData.shoesId);
+    }
+  }
+
   const selectedItems = selectedItemIds
     .map((id) => ITEMS.find((item) => item.id === id))
     .filter((item): item is (typeof ITEMS)[number] => item !== undefined);
