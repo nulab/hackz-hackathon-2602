@@ -22,17 +22,24 @@ export const validatePhotoSize = (base64: string, maxBytes: number): void => {
 //   - Have hair/dark tones at the top and side edges so they blend with the back color
 //   - Have skin tones at the bottom edge (chin/neck area)
 //   - Use a retro low-poly game aesthetic (PS2 era, ~2000s)
-export const buildSD35ImageToImageRequest = (base64Image: string) => ({
-  prompt: [
-    "PURPOSE: This image will be used as a face texture projected onto the front of a 3D character head model.",
-    "COMPOSITION: A front-facing face filling the entire square canvas edge-to-edge. No background whatsoever. The face occupies 100% of the image area.",
-    "EDGES: Top edge and left/right edges fade into dark brown hair (#2a1a0a). Bottom edge shows chin and neck skin. No gaps or margins between the face and canvas edges.",
-    "STYLE: Early 2000s low-polygon 3D game texture (PS1/PS2 era). Limited color palette, flat matte shading, slightly simplified features, visible color banding. NOT photorealistic, NOT modern anime. Think Virtua Fighter, Final Fantasy VII-X face textures.",
-  ].join(" "),
-  negative_prompt:
-    "background, scenery, wall, sky, shoulders, body, clothing, frame, border, margin, padding, photorealistic, high detail, smooth gradient, modern rendering, text, watermark, blurry, distorted",
-  mode: "image-to-image",
-  image: base64Image,
-  strength: 0.65,
-  output_format: "png",
+export const buildNovaCanvasRequest = (base64Image: string) => ({
+  taskType: "IMAGE_VARIATION",
+  imageVariationParams: {
+    text: [
+      "PURPOSE: This image will be used as a face texture projected onto the front of a 3D character head model.",
+      "COMPOSITION: A front-facing face filling the entire square canvas edge-to-edge. No background whatsoever. The face occupies 100% of the image area.",
+      "EDGES: Top edge and left/right edges fade into dark brown hair (#2a1a0a). Bottom edge shows chin and neck skin. No gaps or margins between the face and canvas edges.",
+      "STYLE: Early 2000s low-polygon 3D game texture (PS1/PS2 era). Limited color palette, flat matte shading, slightly simplified features, visible color banding. NOT photorealistic, NOT modern anime. Think Virtua Fighter, Final Fantasy VII-X face textures.",
+    ].join(" "),
+    negativeText:
+      "background, scenery, wall, sky, shoulders, body, clothing, frame, border, margin, padding, photorealistic, high detail, smooth gradient, modern rendering, text, watermark, blurry, distorted",
+    images: [base64Image],
+    similarityStrength: 0.7,
+  },
+  imageGenerationConfig: {
+    numberOfImages: 1,
+    height: 512,
+    width: 512,
+    cfgScale: 8.0,
+  },
 });
