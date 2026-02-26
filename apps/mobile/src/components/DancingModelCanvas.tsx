@@ -6,7 +6,7 @@ type Props = {
 };
 
 export const DancingModelCanvas = ({ faceImageUrl }: Props) => (
-  <div style={{ width: "100%", aspectRatio: "1", position: "relative", zIndex: 1 }}>
+  <div style={{ width: "100%", aspectRatio: "1/2", position: "relative", zIndex: 1 }}>
     <Canvas
       camera={{ position: [0, 0.75, 1.8], fov: 50 }}
       onCreated={({ camera }) => camera.lookAt(0, 0.75, 0)}
