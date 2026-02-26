@@ -106,6 +106,19 @@ export const photoUploadInputSchema = z.object({
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
 });
 
+export const generateFaceInputSchema = z.object({
+  photo: z.string(),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+});
+
+export const generateFaceOutputSchema = z.object({
+  faceImageUrl: z.string(),
+});
+
+export const getFaceImageOutputSchema = z.object({
+  faceImageUrl: z.string().nullable(),
+});
+
 export const equipBuildInputSchema = z.object({
   buildId: z.string().min(1),
 });

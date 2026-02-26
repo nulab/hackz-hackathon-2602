@@ -3,6 +3,7 @@ name: AWS Infrastructure Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch: # 手動実行を許可（terraform apply の再実行など）
 
 concurrency:
   group: deploy-infra
@@ -56,6 +57,16 @@ jobs:
         run: terraform init -input=false
         working-directory: terraform
 
+      - name: Remove orphaned VPC Origin from Terraform state
+        run: |
+          if terraform state list 2>/dev/null | grep -q 'aws_cloudfront_vpc_origin'; then
+            echo "Removing orphaned VPC Origin from Terraform state..."
+            terraform state rm aws_cloudfront_vpc_origin.alb
+          else
+            echo "No VPC Origin in state, skipping"
+          fi
+        working-directory: terraform
+
       - name: Terraform Plan
         run: terraform plan -input=false
         working-directory: terraform
@@ -63,3 +74,16 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -input=false -auto-approve
         working-directory: terraform
+
+      - name: Delete orphaned CloudFront VPC Origin
+        run: |
+          VPC_ORIGIN_ID="vo_CZFVvJ8qMnTG2jiEz0kqSS"
+          ETAG=$(aws cloudfront get-vpc-origin --id "$VPC_ORIGIN_ID" --query 'ETag' --output text 2>/dev/null || true)
+          if [ -n "$ETAG" ] && [ "$ETAG" != "None" ]; then
+            echo "Deleting orphaned VPC Origin $VPC_ORIGIN_ID..."
+            aws cloudfront delete-vpc-origin --id "$VPC_ORIGIN_ID" --if-match "$ETAG" \
+              && echo "Successfully deleted VPC Origin" \
+              || echo "Warning: VPC Origin deletion failed (may still be in use)"
+          else
+            echo "VPC Origin not found or already deleted"
+          fi

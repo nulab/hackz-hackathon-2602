@@ -9,7 +9,7 @@
 
 resource "aws_lb" "server" {
   name               = "${var.app_name}-alb"
-  internal           = true # CloudFront VPC Origin 経由でアクセス（インターネット直接アクセス不可）
+  internal           = false # CloudFront prefix list で直接アクセスを制限
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = aws_subnet.public[*].id

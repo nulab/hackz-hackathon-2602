@@ -24,9 +24,11 @@ export const Route = createRootRoute({
     <TRPCProvider>
       <ToastProvider>
         <AuthErrorHandler />
-        <FallingItems />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <Outlet />
+        <div style={{ maxWidth: 480, marginInline: "auto", width: "100%", minHeight: "100vh" }}>
+          <FallingItems />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <Outlet />
+          </div>
         </div>
       </ToastProvider>
     </TRPCProvider>
