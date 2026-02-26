@@ -12,12 +12,12 @@ export const projectorViewerRouter = router({
   getActiveUser: publicProcedure.output(activeUserOutputSchema).query(async () => {
     const active = activeUserStore.get();
     if (!active) {
-      return { user: null, build: null };
+      return { user: null, build: null, cleared: activeUserStore.isCleared() };
     }
 
     const user = await userRepo.findById(active.userId);
     if (!user) {
-      return { user: null, build: null };
+      return { user: null, build: null, cleared: false };
     }
 
     const build = await buildRepo.find(active.userId, "default");
@@ -36,6 +36,7 @@ export const projectorViewerRouter = router({
             shoesId: build.shoesId,
           }
         : null,
+      cleared: false,
     };
   }),
 

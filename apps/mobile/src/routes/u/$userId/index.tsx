@@ -41,6 +41,7 @@ const prefetchImages = () => {
 
 const HomePage = () => {
   const { userId } = Route.useParams();
+  const { token } = Route.useRouteContext();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -103,6 +104,7 @@ const HomePage = () => {
       navigate({
         to: "/u/$userId/gacha/$costumeKey",
         params: { userId, costumeKey: result.costume.id },
+        search: { token },
       });
     },
   });
@@ -156,6 +158,7 @@ const HomePage = () => {
           </PrimaryButton>
           <PrimaryButton
             href={`/u/${userId}/costumes`}
+            search={{ token }}
             className="button-position button-bottom-right"
           >
             コーディネートに

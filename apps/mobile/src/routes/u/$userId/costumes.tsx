@@ -36,6 +36,7 @@ const findByLayer = (itemIds: string[], layer: ItemLayer): string | undefined =>
 
 const CostumesPage = () => {
   const { userId } = Route.useParams();
+  const { token } = Route.useRouteContext();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { data } = trpc.costumes.list.useQuery();
@@ -108,7 +109,7 @@ const CostumesPage = () => {
       {
         onSuccess: () => {
           showToast("コーディネートを保存しました！", "success");
-          setTimeout(() => navigate({ to: "/u/$userId", params: { userId } }), 1500);
+          setTimeout(() => navigate({ to: "/u/$userId", params: { userId }, search: { token } }), 1500);
         },
         onError: (err) => {
           showToast(err.message, "error");
@@ -129,6 +130,7 @@ const CostumesPage = () => {
       <Link
         to="/u/$userId"
         params={{ userId }}
+        search={{ token }}
         className={styles.homeButton}
         aria-label="トップへもどる"
       >

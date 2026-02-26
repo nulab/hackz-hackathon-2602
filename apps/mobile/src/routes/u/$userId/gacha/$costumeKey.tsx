@@ -6,13 +6,14 @@ import styles from "./$costumeKey.module.css";
 
 const GachaResultPage = () => {
   const { userId, costumeKey } = Route.useParams();
+  const { token } = Route.useRouteContext();
   const item = ITEMS.find((i) => i.id === costumeKey);
 
   if (!item) {
     return (
       <div className="page container">
         <p>アイテムが見つかりません</p>
-        <PrimaryButton href={`/u/${userId}`}>トップにもどる</PrimaryButton>
+        <PrimaryButton href={`/u/${userId}`} search={{ token }}>トップにもどる</PrimaryButton>
       </div>
     );
   }
@@ -32,7 +33,7 @@ const GachaResultPage = () => {
         </div>
       </div>
       <div className={styles.buttonGroup}>
-        <PrimaryButton href={`/u/${userId}`}>トップにもどる</PrimaryButton>
+        <PrimaryButton href={`/u/${userId}`} search={{ token }}>トップにもどる</PrimaryButton>
       </div>
     </div>
   );

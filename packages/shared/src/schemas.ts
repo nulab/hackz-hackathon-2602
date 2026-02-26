@@ -277,6 +277,7 @@ export const activeUserOutputSchema = z.object({
       shoesId: z.string().optional(),
     })
     .nullable(),
+  cleared: z.boolean(),
 });
 
 export const setActiveUserInputSchema = z.object({

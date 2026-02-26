@@ -38,6 +38,10 @@ export const Route = createFileRoute("/u/$userId")({
     localStorage.setItem("userId", params.userId);
 
     await verifyAuth(params.userId);
+
+    // 子ルートが token を URL に持ち回れるようにコンテキストで渡す
+    const token = search.token || localStorage.getItem("userToken") || undefined;
+    return { token };
   },
   pendingComponent: LoadingScreen,
   component: UserLayout,

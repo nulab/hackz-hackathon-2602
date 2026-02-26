@@ -41,9 +41,18 @@ const ViewerPage = () => {
       sentinel?.release();
     };
   }, []);
-  const { data } = trpc.projectorViewer.getActiveUser.useQuery(undefined, {
+  const { data: rawData } = trpc.projectorViewer.getActiveUser.useQuery(undefined, {
     refetchInterval: 2000,
   });
+
+  // Sticky display: keep the last known user on screen.
+  // Only clear when the server signals an explicit reset (cleared: true).
+  const lastValidRef = useRef(rawData);
+  if (rawData?.user) {
+    lastValidRef.current = rawData;
+  }
+  const shouldClear = !rawData?.user && rawData?.cleared;
+  const data = rawData?.user || shouldClear ? rawData : lastValidRef.current;
 
   const user = data?.user ?? null;
   const build = data?.build ?? null;
