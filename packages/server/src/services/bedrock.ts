@@ -4,11 +4,31 @@ const bedrock = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || "ap-northeast-1",
 });
 
+const bedrockUsEast1 = new BedrockRuntimeClient({
+  region: "us-east-1",
+});
+
 export const invokeBedrock = async (
   modelId: string,
   input: Record<string, unknown>,
 ): Promise<Record<string, unknown>> => {
   const response = await bedrock.send(
+    new InvokeModelCommand({
+      modelId,
+      body: JSON.stringify(input),
+      contentType: "application/json",
+      accept: "application/json",
+    }),
+  );
+
+  return JSON.parse(new TextDecoder().decode(response.body));
+};
+
+export const invokeBedrockUsEast1 = async (
+  modelId: string,
+  input: Record<string, unknown>,
+): Promise<Record<string, unknown>> => {
+  const response = await bedrockUsEast1.send(
     new InvokeModelCommand({
       modelId,
       body: JSON.stringify(input),

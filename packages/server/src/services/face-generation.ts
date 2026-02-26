@@ -1,8 +1,8 @@
 import sharp from "sharp";
-import { buildNovaCanvasRequest } from "../domain/face-generation";
+import { buildSD35ImageToImageRequest } from "../domain/face-generation";
 import { computeCropRegion } from "../domain/face-crop";
 import { detectFaceBoundingBox } from "./rekognition";
-import { invokeBedrock } from "./bedrock";
+import { invokeBedrockUsEast1 } from "./bedrock";
 import { uploadFile } from "./s3";
 
 const CROP_OUTPUT_SIZE = 512;
@@ -31,12 +31,17 @@ export const generateFaceIllustration = async (
 ): Promise<{ faceImageUrl: string }> => {
   const croppedBase64 = await cropFaceFromImage(base64Image);
 
-  const request = buildNovaCanvasRequest(croppedBase64);
-  const response = await invokeBedrock("amazon.nova-canvas-v1:0", request);
-  const images = response.images as string[];
+  const request = buildSD35ImageToImageRequest(croppedBase64);
+  const response = await invokeBedrockUsEast1("stability.sd3-5-large-v1:0", request);
 
+  const finishReasons = response.finish_reasons as (string | null)[];
+  if (finishReasons?.[0] === "content_filtered") {
+    throw new Error("SD 3.5 Large: image was filtered by content moderation");
+  }
+
+  const images = response.images as string[];
   if (!images || images.length === 0) {
-    throw new Error("Nova Canvas returned no images");
+    throw new Error("SD 3.5 Large returned no images");
   }
 
   const imageBuffer = Buffer.from(images[0], "base64");
