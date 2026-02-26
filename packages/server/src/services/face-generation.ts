@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { buildNovaCanvasRequest } from "../domain/face-generation";
+import { buildNovaCanvasRequest, buildNovaProDescribeRequest } from "../domain/face-generation";
 import { computeCropRegion } from "../domain/face-crop";
 import { detectFaceBoundingBox } from "./rekognition";
 import { invokeBedrock } from "./bedrock";
@@ -31,7 +31,15 @@ export const generateFaceIllustration = async (
 ): Promise<{ faceImageUrl: string }> => {
   const croppedBase64 = await cropFaceFromImage(base64Image);
 
-  const request = buildNovaCanvasRequest(croppedBase64);
+  // Step 1: Nova Pro で顔の特徴をテキスト化
+  const describeRequest = buildNovaProDescribeRequest(croppedBase64);
+  const describeResponse = await invokeBedrock("amazon.nova-pro-v1:0", describeRequest);
+  const faceDescription =
+    (describeResponse.output as { message?: { content?: { text?: string }[] } })?.message
+      ?.content?.[0]?.text ?? "";
+
+  // Step 2: テキスト記述を使って Nova Canvas でテクスチャ生成
+  const request = buildNovaCanvasRequest(croppedBase64, faceDescription);
   const response = await invokeBedrock("amazon.nova-canvas-v1:0", request);
   const images = response.images as string[];
 
