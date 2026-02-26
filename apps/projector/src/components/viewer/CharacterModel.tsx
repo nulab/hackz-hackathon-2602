@@ -109,7 +109,13 @@ const loadProcessedTexture = (
 
 const REGION_THRESHOLDS = { shoeTop: 0.03, bottomTop: 0.6, topTop: 0.87 };
 
-const applyHeightBasedTextures = async (mesh: THREE.Mesh, faceUrl: string) => {
+const applyHeightBasedTextures = async (
+  mesh: THREE.Mesh,
+  faceUrl: string,
+  topsUrl?: string,
+  bottomsUrl?: string,
+  shoesUrl?: string,
+) => {
   const geometry = mesh.geometry;
   const pos = geometry.attributes.position;
 
@@ -179,9 +185,9 @@ const applyHeightBasedTextures = async (mesh: THREE.Mesh, faceUrl: string) => {
 
   const [headTex, topsTex, bottomsTex, shoesTex] = await Promise.all([
     loadProcessedTexture(faceUrl, { bgColor: "#2a1a0a" }),
-    loadProcessedTexture("/models/sozai_tops.png"),
-    loadProcessedTexture("/models/sozai_bottoms_vivid.png"),
-    loadProcessedTexture("/models/sozai_shoes.png"),
+    loadProcessedTexture(topsUrl || "/models/sozai_tops.png"),
+    loadProcessedTexture(bottomsUrl || "/models/sozai_bottoms_vivid.png"),
+    loadProcessedTexture(shoesUrl || "/models/sozai_shoes.png"),
   ]);
 
   const mat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, toneMapped: false });
@@ -262,9 +268,17 @@ const pickRandomAnimation = (current: number): number => {
 
 type CharacterModelProps = {
   faceImageUrl?: string | null;
+  topsUrl?: string;
+  bottomsUrl?: string;
+  shoesUrl?: string;
 };
 
-export const CharacterModel = ({ faceImageUrl }: CharacterModelProps) => {
+export const CharacterModel = ({
+  faceImageUrl,
+  topsUrl,
+  bottomsUrl,
+  shoesUrl,
+}: CharacterModelProps) => {
   const [scene, setScene] = useState<THREE.Group | null>(null);
   const groupRef = useRef<THREE.Group>(null);
   const mixer = useRef<THREE.AnimationMixer | null>(null);
@@ -328,7 +342,7 @@ export const CharacterModel = ({ faceImageUrl }: CharacterModelProps) => {
         }
       });
       for (const mesh of allMeshes) {
-        await applyHeightBasedTextures(mesh, headUrl);
+        await applyHeightBasedTextures(mesh, headUrl, topsUrl, bottomsUrl, shoesUrl);
       }
 
       mixer.current = new THREE.AnimationMixer(fbx);
@@ -343,7 +357,7 @@ export const CharacterModel = ({ faceImageUrl }: CharacterModelProps) => {
       mixer.current = null;
       fbxRef.current = null;
     };
-  }, [faceImageUrl, playRandomAnimation]);
+  }, [faceImageUrl, topsUrl, bottomsUrl, shoesUrl, playRandomAnimation]);
 
   useFrame((_, delta) => {
     mixer.current?.update(delta);

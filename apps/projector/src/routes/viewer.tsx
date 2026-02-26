@@ -12,7 +12,8 @@ const ViewerPage = () => {
   });
 
   const user = data?.user ?? null;
-  const textures = resolveTextures(user?.photoUrl);
+  const build = data?.build ?? null;
+  const textures = resolveTextures(user?.photoUrl, build);
 
   return (
     <div className="fixed inset-0 bg-black">
@@ -25,7 +26,14 @@ const ViewerPage = () => {
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[3, 5, 3]} intensity={0.8} />
-        {user && <CharacterModel faceImageUrl={textures.face} />}
+        {user && (
+          <CharacterModel
+            faceImageUrl={textures.face}
+            topsUrl={textures.tops}
+            bottomsUrl={textures.bottoms}
+            shoesUrl={textures.shoes}
+          />
+        )}
       </Canvas>
     </div>
   );

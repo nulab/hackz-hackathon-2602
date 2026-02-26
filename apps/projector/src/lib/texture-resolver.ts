@@ -12,9 +12,22 @@ const DEFAULTS: BuildTextures = {
   shoes: "/models/sozai_shoes.png",
 };
 
-export const resolveTextures = (photoUrl?: string): BuildTextures => ({
+type BuildData = {
+  upperId?: string;
+  lowerId?: string;
+  shoesId?: string;
+};
+
+const resolveItemTexture = (itemId: string | undefined, fallback: string): string => {
+  if (!itemId) {
+    return fallback;
+  }
+  return `/costumes/texture_${itemId}.png`;
+};
+
+export const resolveTextures = (photoUrl?: string, build?: BuildData | null): BuildTextures => ({
   face: photoUrl || DEFAULTS.face,
-  tops: DEFAULTS.tops,
-  bottoms: DEFAULTS.bottoms,
-  shoes: DEFAULTS.shoes,
+  tops: resolveItemTexture(build?.upperId, DEFAULTS.tops),
+  bottoms: resolveItemTexture(build?.lowerId, DEFAULTS.bottoms),
+  shoes: resolveItemTexture(build?.shoesId, DEFAULTS.shoes),
 });
