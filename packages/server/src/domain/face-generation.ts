@@ -15,12 +15,24 @@ export const validatePhotoSize = (base64: string, maxBytes: number): void => {
   }
 };
 
+// This texture is projected flat onto the front face of a low-poly 3D head mesh.
+// The back of the head uses a solid dark brown color (#2a1a0a).
+// Therefore the generated image must:
+//   - Fill the entire square with the face (no background at all)
+//   - Have hair/dark tones at the top and side edges so they blend with the back color
+//   - Have skin tones at the bottom edge (chin/neck area)
+//   - Use a retro low-poly game aesthetic (PS2 era, ~2000s)
 export const buildNovaCanvasRequest = (base64Image: string) => ({
   taskType: "IMAGE_VARIATION",
   imageVariationParams: {
-    text: "A front-facing face and hair illustration for a 3D character model texture. The face and hair must fill the entire rectangular canvas with NO background visible. Low-poly PS2-era game texture style: limited color palette, flat shading, slightly pixelated, early 2000s CG aesthetic. Simple geometric features, muted tones, minimal detail like a UV-mapped face texture from a low-polygon 3D model.",
+    text: [
+      "PURPOSE: This image will be used as a face texture projected onto the front of a 3D character head model.",
+      "COMPOSITION: A front-facing face filling the entire square canvas edge-to-edge. No background whatsoever. The face occupies 100% of the image area.",
+      "EDGES: Top edge and left/right edges fade into dark brown hair (#2a1a0a). Bottom edge shows chin and neck skin. No gaps or margins between the face and canvas edges.",
+      "STYLE: Early 2000s low-polygon 3D game texture (PS1/PS2 era). Limited color palette, flat matte shading, slightly simplified features, visible color banding. NOT photorealistic, NOT modern anime. Think Virtua Fighter, Final Fantasy VII-X face textures.",
+    ].join(" "),
     negativeText:
-      "background, scenery, sky, room, photorealistic, high detail, smooth gradient, modern rendering, text, watermark, blurry, distorted, deformed",
+      "background, scenery, wall, sky, shoulders, body, clothing, frame, border, margin, padding, photorealistic, high detail, smooth gradient, modern rendering, text, watermark, blurry, distorted",
     images: [base64Image],
     similarityStrength: 0.7,
   },
@@ -28,6 +40,6 @@ export const buildNovaCanvasRequest = (base64Image: string) => ({
     numberOfImages: 1,
     height: 512,
     width: 512,
-    cfgScale: 7.0,
+    cfgScale: 8.0,
   },
 });

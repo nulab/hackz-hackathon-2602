@@ -42,22 +42,43 @@
   .button-position {
     position: absolute;
     z-index: 10;
+    filter: drop-shadow(0 0 0.5rem rgba(255, 255, 255, 0.3));
+    transition:
+      filter 0.3s ease,
+      transform 0.3s ease;
   }
 
-  .button-top-left {
-    top: 6rem;
+  .button-position:active {
+    transform: scale(0.93);
+    filter: drop-shadow(0 0 1rem rgba(255, 255, 255, 0.6));
+  }
+
+  .button-bottom-left-upper {
+    bottom: 11rem;
     left: -1rem;
+    animation: float 3s ease-in-out infinite;
   }
 
-  .button-right-center {
-    top: 50%;
+  .button-bottom-right {
+    bottom: 2rem;
     right: -1rem;
-    transform: translateY(-50%);
+    animation: float 3s ease-in-out 1s infinite;
   }
 
-  .button-bottom-left {
-    bottom: 5rem;
+  .button-bottom-left-lower {
+    bottom: 1rem;
     left: -1rem;
+    animation: float 3s ease-in-out 2s infinite;
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 -0.4rem;
+    }
   }
 
   /* Card flip styles */

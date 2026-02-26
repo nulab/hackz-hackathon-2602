@@ -125,14 +125,24 @@ const HomePage = () => {
             </div>
           )}
 
+          <PrimaryButton
+            onClick={() => setCameraOpen(true)}
+            className="button-position button-bottom-left-upper"
+          >
+            しゃしんをとろう！
+          </PrimaryButton>
+          <PrimaryButton
+            href={`/u/${userId}/costumes`}
+            className="button-position button-bottom-right"
+          >
+            コーディネートにちょうせん！
+          </PrimaryButton>
+          <PrimaryButton onClick={handleGacha} className="button-position button-bottom-left-lower">
+            オシャレカードをゲット！
+          </PrimaryButton>
+
           <img src={uiImages.magiccircle} alt="魔法陣" className={styles.magicCircle} />
         </div>
-      </div>
-
-      <div className={styles.buttonRow}>
-        <PrimaryButton onClick={() => setCameraOpen(true)}>しゃしんをとろう！</PrimaryButton>
-        <PrimaryButton href={`/u/${userId}/costumes`}>コーディネートにちょうせん！</PrimaryButton>
-        <PrimaryButton onClick={handleGacha}>オシャレカードをゲット！</PrimaryButton>
       </div>
 
       <CameraCapture
