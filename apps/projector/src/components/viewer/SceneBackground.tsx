@@ -8,6 +8,7 @@ export const SceneBackground = ({ path }: { path: string }) => {
   useEffect(() => {
     const loader = new TextureLoader();
     loader.load(path, (texture) => {
+      // @ts-expect-error @types/three version mismatch (0.173.0 vs 0.183.1)
       scene.background = texture;
     });
 
