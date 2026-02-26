@@ -25,11 +25,20 @@ export const useNfcReader = () => {
       abortRef.current = abort;
 
       reader.onreading = (event: NDEFReadingEvent) => {
-        const records = Array.from(event.message.records).map((r) => ({
-          recordType: r.recordType,
-          data: new TextDecoder().decode(r.data),
-        }));
-        setLastRead({ serialNumber: event.serialNumber ?? "", records });
+        try {
+          const records = Array.from(event.message.records).map((r) => ({
+            recordType: r.recordType,
+            data: new TextDecoder().decode(r.data),
+          }));
+          setLastRead({ serialNumber: event.serialNumber ?? "", records });
+        } catch (e) {
+          // records のパースに失敗しても serialNumber だけで読み取り結果を返す
+          setLastRead({
+            serialNumber: event.serialNumber ?? "",
+            records: [],
+          });
+          setError(e instanceof Error ? e.message : "NFC record parse error");
+        }
       };
 
       reader.onreadingerror = () => {

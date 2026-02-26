@@ -64,8 +64,10 @@ const ConnectPage = () => {
     const nfcId = lastRead.serialNumber || lastRead.records[0]?.data || "";
     if (nfcId) {
       sendNfcScan(nfcId);
-      setScanLog((prev) => [{ type: "NFC", data: nfcId, time: new Date() }, ...prev].slice(0, 20));
     }
+    setScanLog((prev) =>
+      [{ type: "NFC", data: nfcId || "(ID取得不可)", time: new Date() }, ...prev].slice(0, 20),
+    );
   }, [lastRead, sendNfcScan]);
 
   // Projector からのダウンストリームメッセージをポーリング
