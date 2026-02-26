@@ -1,9 +1,11 @@
 @layer base {
   :where(html) {
     font-family:
+      "Zen Maru Gothic",
       system-ui,
       -apple-system,
       sans-serif;
+    font-weight: 900;
     color: var(--color-text-default);
     background-color: var(--color-background-default);
   }
