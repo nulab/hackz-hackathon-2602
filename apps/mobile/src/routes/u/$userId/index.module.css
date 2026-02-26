@@ -90,6 +90,9 @@
   padding: var(--space-md);
   font-size: 0.875rem;
   text-align: center;
+  z-index: 10;
+  mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
 }
 
 .buttonRow {
