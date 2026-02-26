@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Canvas } from "@react-three/fiber";
 import { trpc } from "../lib/trpc";
@@ -7,6 +8,35 @@ import { IdleScreen } from "../components/viewer/IdleScreen";
 import { resolveTextures } from "../lib/texture-resolver";
 
 const ViewerPage = () => {
+  useEffect(() => {
+    if (!("wakeLock" in navigator)) {
+      return;
+    }
+
+    let sentinel: WakeLockSentinel | null = null;
+
+    const requestWakeLock = async () => {
+      try {
+        sentinel = await navigator.wakeLock.request("screen");
+      } catch {
+        // Low battery or other OS-level restriction
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        requestWakeLock();
+      }
+    };
+
+    requestWakeLock();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      sentinel?.release();
+    };
+  }, []);
   const { data } = trpc.projectorViewer.getActiveUser.useQuery(undefined, {
     refetchInterval: 2000,
   });
