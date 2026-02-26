@@ -1,8 +1,13 @@
+import textureCastle from "../assets/backgrounds/texture_castle.png";
+import textureDancestage from "../assets/backgrounds/texture_dancestage.png";
+import textureFashionstreet from "../assets/backgrounds/texture_fashionstreet.png";
+import textureShell from "../assets/backgrounds/texture_shell.png";
+
 export const BACKGROUND_PATHS = [
-  "/backgrounds/texture_castle.png",
-  "/backgrounds/texture_dancestage.png",
-  "/backgrounds/texture_fashionstreet.png",
-  "/backgrounds/texture_shell.png",
+  textureCastle,
+  textureDancestage,
+  textureFashionstreet,
+  textureShell,
 ];
 
 export function pickRandomBackground(): string {
