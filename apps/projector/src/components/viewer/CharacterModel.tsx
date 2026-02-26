@@ -1,8 +1,14 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
-import { ANIMATION_PATHS } from "../../lib/animation-list";
+
+// animations/ ディレクトリの Mixamo FBX ファイル
+const ANIMATION_URLS = [
+  "/models/animations/Breakdance Freeze Var 4.fbx",
+  "/models/animations/Ginga Variation 3.fbx",
+  "/models/animations/Wave Hip Hop Dance.fbx",
+];
 
 // --- Mixamo FBX からアニメーションだけ取り出す ---
 const loadAnimationFromFBX = (url: string): Promise<THREE.AnimationClip | null> =>
@@ -255,16 +261,8 @@ const applyHeightBasedTextures = async (
   }
 };
 
-const pickRandomAnimation = (current: number): number => {
-  if (ANIMATION_PATHS.length <= 1) {
-    return 0;
-  }
-  let next: number;
-  do {
-    next = Math.floor(Math.random() * ANIMATION_PATHS.length);
-  } while (next === current && ANIMATION_PATHS.length > 1);
-  return next;
-};
+const pickRandomAnimationUrl = () =>
+  ANIMATION_URLS[Math.floor(Math.random() * ANIMATION_URLS.length)];
 
 type CharacterModelProps = {
   faceImageUrl?: string | null;
@@ -282,37 +280,6 @@ export const CharacterModel = ({
   const [scene, setScene] = useState<THREE.Group | null>(null);
   const groupRef = useRef<THREE.Group>(null);
   const mixer = useRef<THREE.AnimationMixer | null>(null);
-  const currentAnimIndex = useRef(-1);
-  const fbxRef = useRef<THREE.Group | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const playRandomAnimation = useCallback(async () => {
-    if (!fbxRef.current || !mixer.current) {
-      return;
-    }
-    const idx = pickRandomAnimation(currentAnimIndex.current);
-    currentAnimIndex.current = idx;
-    const clip = await loadAnimationFromFBX(ANIMATION_PATHS[idx]);
-    if (!clip || !mixer.current) {
-      return;
-    }
-
-    const action = mixer.current.clipAction(clip);
-    mixer.current.stopAllAction();
-    action.reset().play();
-    action.loop = THREE.LoopRepeat;
-
-    // Switch animation every 10-20 seconds
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    const duration = 10000 + Math.random() * 10000;
-    timerRef.current = setTimeout(() => {
-      if (currentAnimIndex.current === idx) {
-        playRandomAnimation();
-      }
-    }, duration);
-  }, []);
 
   useEffect(() => {
     const loader = new FBXLoader();
@@ -332,7 +299,6 @@ export const CharacterModel = ({
       fbx.position.y = -adj.min.y;
 
       setScene(fbx);
-      fbxRef.current = fbx;
 
       const headUrl = faceImageUrl || "/models/free_face.png";
       const allMeshes: THREE.Mesh[] = [];
@@ -346,18 +312,19 @@ export const CharacterModel = ({
       }
 
       mixer.current = new THREE.AnimationMixer(fbx);
-      playRandomAnimation();
+      const clip = await loadAnimationFromFBX(pickRandomAnimationUrl());
+      if (clip && mixer.current) {
+        const action = mixer.current.clipAction(clip);
+        action.loop = THREE.LoopRepeat;
+        action.play();
+      }
     });
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
       mixer.current?.stopAllAction();
       mixer.current = null;
-      fbxRef.current = null;
     };
-  }, [faceImageUrl, topsUrl, bottomsUrl, shoesUrl, playRandomAnimation]);
+  }, [faceImageUrl, topsUrl, bottomsUrl, shoesUrl]);
 
   useFrame((_, delta) => {
     mixer.current?.update(delta);

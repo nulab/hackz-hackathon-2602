@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Canvas } from "@react-three/fiber";
 import { trpc } from "../lib/trpc";
 import { CharacterModel } from "../components/viewer/CharacterModel";
+import { SceneBackground } from "../components/viewer/SceneBackground";
 import { FullscreenButton } from "../components/viewer/FullscreenButton";
 import { IdleScreen } from "../components/viewer/IdleScreen";
 import { resolveTextures } from "../lib/texture-resolver";
+import { pickRandomBackground } from "../lib/background-list";
 
 const ViewerPage = () => {
   useEffect(() => {
@@ -45,6 +47,17 @@ const ViewerPage = () => {
   const build = data?.build ?? null;
   const textures = resolveTextures(user?.photoUrl, build);
 
+  const prevUserIdRef = useRef<string | null>(null);
+  const bgPath = useMemo(() => {
+    if (!user) {
+      return null;
+    }
+    // Re-pick when user changes
+    prevUserIdRef.current = user.id;
+    return pickRandomBackground();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   return (
     <div className="fixed inset-0 bg-black">
       <FullscreenButton />
@@ -56,6 +69,7 @@ const ViewerPage = () => {
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[3, 5, 3]} intensity={0.8} />
+        {user && bgPath && <SceneBackground path={bgPath} />}
         {user && (
           <CharacterModel
             faceImageUrl={textures.face}
